@@ -326,6 +326,17 @@ void page_swap_out(int i){
 int page_replacement_policy(void){
 	ASSERT(queue_empty(page_queue)==FALSE);
 	page_map_entry_t* victim=(page_map_entry_t*)queue_get(page_queue);
+	if(EXTRA_CREDIT){
+		uint32_t the_entry;
+		the_entry=get_ptab_entry(victim->page_directory,victim->vaddr);
+		while(the_entry & PE_A)//it was accessed
+		{
+			set_ptab_entry_flags(victim->page_directory,victim->vaddr,the_entry & (~PE_A) & MODE_MASK );
+			queue_put(page_queue,victim);
+			victim=(page_map_entry_t*)queue_get(page_queue);
+			the_entry=get_ptab_entry(victim->page_directory,victim->vaddr);
+		}
+	}
 	ASSERT(victim->is_pinned==FALSE);
 	ASSERT(victim->is_available==FALSE);
 	return victim->index;
