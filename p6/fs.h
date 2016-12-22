@@ -113,7 +113,7 @@ typedef struct
 	uint32_t cursor;//in bytes
 	uint16_t inode_id;
 	uint16_t mode;//(FS_O_RDONLY, FS_O_WRONLY, FS_ORDWR)
-}file_des;
+}file_desc;
 
 // typedef struct fs_mem_tree
 // {

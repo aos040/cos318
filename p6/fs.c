@@ -34,8 +34,9 @@ static int strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len with
 	dest[dest_max_len]='\0';
 }
 
-//useful var-----------------------------
+//useful var--------------------------------------
 static char block_scratch[BLOCK_SIZE];//inode read/write/free use scratch
+static char block_scratch_1[BLOCK_SIZE];
 
 static char inode_bitmap_block_scratch[BLOCK_SIZE];
 static char dblock_bitmap_block_scratch[BLOCK_SIZE];
@@ -44,7 +45,7 @@ static char super_block_scratch[BLOCK_SIZE];
 
 static super_b * my_sb;
 
-static file_des fd_table[MAX_OPEN_FILE_NUM];
+static file_desc fd_table[MAX_OPEN_FILE_NUM];
 
 static uint16_t pwd;//start from 0 as inode index
 
@@ -187,14 +188,14 @@ static int inode_alloc(void)
 //caller prepare space for inode and check valid
 static void inode_read(int index,char* inode_buff)
 {
-	char block_scratch[BLOCK_SIZE];
+	// char block_scratch[BLOCK_SIZE];
 	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),block_scratch);
 	bcopy(block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode),inode_buff,sizeof(inode));
 }
 //caller prepare space for inode and check valid
 static void inode_write(int index,char* inode_buff)
 {
-	char block_scratch[BLOCK_SIZE];
+	// char block_scratch[BLOCK_SIZE];
 	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),block_scratch);
 	bcopy(inode_buff,block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode),sizeof(inode));
 	block_write(my_sb->inode_start+(index/INODE_PER_BLOCK),block_scratch);
@@ -253,6 +254,8 @@ static void inode_free(int index)//free the inode, also free its data
 	}
 }
 //directories ---------------------------------------------------
+
+//this func doesn't check same filename,so we may need to use find before we really insert one file to dir 
 static int dir_entry_add(int dir_index,int son_index,char *filename)
 {
 	//read_bitmap_block(INODE_BITMAP,dir_index)
@@ -269,28 +272,308 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
 
 
 	if(next_i%DIR_ENTRY_PER_BLOCK==0)//need new block
-	{
-		if(next_i_inblock==)
+	{	
+		int indirect_alloc_res,alloc_res;
+		if(next_i_inblock>=DIRECT_BLOCK)//need indirect block
+		{
+ 			if(next_i_inblock==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
+			{
+				indirect_alloc_res=dblock_alloc();
+				if(indirect_alloc_res<0)
+					return -1;
+				dir_inode.blocks[DIRECT_BLOCK]=indirect_alloc_res;//mount new indirect index block
+			}
+			//if(next_i_inblock>DIRECT_BLOCK)//need indirect block ,and the indirect index block has been alloced
+ 			//indirect index block
+			dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
+			uint16_t *block_list=(uint16_t *)block_scratch;
+			alloc_res=dblock_alloc();
+			if(alloc_res<0){
+				if(next_i_inblock==DIRECT_BLOCK)
+					dblock_free(indirect_alloc_res);
+				return -1;
+			}
+			block_list[next_i_inblock-DIRECT_BLOCK]=alloc_res;//mount new block
+			dblock_write(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
+
+		}
+		else //need direct block
+		{
+			alloc_res=dblock_alloc();
+			if(alloc_res<0)
+				return -1;
+			dir_inode.blocks[next_i_inblock]=alloc_res;//mount new block
+		}
+			dblock_read(alloc_res,block_scratch);
+
+			dir_entry *entry_list=(dir_entry *)block_scratch;
+			entry_list[0]=new_entry;
+
+			dblock_write(alloc_res,block_scratch);
+
 	}
 	else
 	{
 		if(next_i_inblock>=DIRECT_BLOCK){//indirect block
 			dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
 			uint16_t *block_list=(uint16_t *)block_scratch;
-			next_i_inblock=block_list[next_i_inblock-DIRECT_BLOCK];
-			dblock_read(next_i_inblock,block_scratch);
+			next_i_inblock=block_list[next_i_inblock-DIRECT_BLOCK];//get real block no
 		}
 		else
 		{
-			dblock_read(dir_inode.blocks[next_i_inblock],block_scratch);
+			//real block no is dir_inode.blocks[next_i_inblock]
+			next_i_inblock=dir_inode.blocks[next_i_inblock];
+		}
+
+		dblock_read(next_i_inblock,block_scratch);
+
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		entry_list[next_i%DIR_ENTRY_PER_BLOCK]=new_entry;
+		
+		dblock_write(next_i_inblock,block_scratch);
+	}
+
+	dir_inode.size+=sizeof(dir_entry);
+	inode_write(dir_index,&dir_inode);//update dir inode
+
+	return 0;
+}
+//if match return inode id else return -1
+//so we may need to use find before we really insert one file to dir 
+static int dir_entry_find(int dir_index,char *filename)
+{
+	inode dir_inode;
+	inode_read(dir_index,&dir_inode);
+	int total_entry_num;
+	total_entry_num=dir_inode.size/(sizeof(dir_entry));
+	int total_block_num;
+	total_block_num=(total_entry_num-1)/DIR_ENTRY_PER_BLOCK + 1;
+	if(total_block_num>=DIRECT_BLOCK)
+	{
+		int i,j,entry_block,remain_blocks;
+		for(i=0;i<DIRECT_BLOCK;i++)
+		{
+			entry_block=dir_inode.blocks[i];
+			dblock_read(entry_block,block_scratch);
 			dir_entry *entry_list=(dir_entry *)block_scratch;
-			entry_list[next_i%DIR_ENTRY_PER_BLOCK]=
-			dblock_write(dir_inode.blocks[next_i_inblock],block_scratch);
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+					return entry_list[j].inode_id;
+		}
+
+		dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
+		uint16_t *block_list=(uint16_t *)block_scratch;
+
+		for(i=0;i<total_block_num-DIRECT_BLOCK-1;i++)
+		{
+			dblock_read(block_list[i],block_scratch_1);
+			dir_entry *entry_list=(dir_entry *)block_scratch_1;
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+					return entry_list[j].inode_id;
+		}
+		//last block
+		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1)
+		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
+		dir_entry *entry_list=(dir_entry *)block_scratch_1;
+		for(j=0;j<final_end;j++)
+		{
+			if(same_string(entry_list[j].file_name,filename))
+				return entry_list[j].inode_id;
+		}
+	}
+	else
+	{
+		int i,j,entry_block;
+		for(i=0;i<total_block_num-1;i++)
+		{
+			entry_block=dir_inode.blocks[i];
+			dblock_read(entry_block,block_scratch);
+			dir_entry *entry_list=(dir_entry *)block_scratch;
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+					return entry_list[j].inode_id;
+		}
+		//last block
+		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
+		entry_block=dir_inode.blocks[total_block_num-1];
+		dblock_read(entry_block,block_scratch);
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		for(j=0;j<final_end;j++)
+		{
+			if(same_string(entry_list[j].file_name,filename))
+				return entry_list[j].inode_id;
 		}
 	}
 	return -1;
 }
 
+static void swap_in_last_entry(int block_id,int in_block_id,int last_block_id,int in_last_block_id)
+{
+	if(block_id==last_block_id)//same block
+	{
+		if(in_block_id==in_last_block_id)//same
+			return ;
+		dblock_read(block_id,block_scratch);
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		entry_list[in_block_id]=entry_list[in_last_block_id];
+		dblock_write(block_id,block_scratch);
+	}
+	else
+	{
+		dblock_read(block_id,block_scratch);
+		dblock_read(last_block_id,block_scratch_1);
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		dir_entry *entry_list_last=(dir_entry *)block_scratch_1;
+		entry_list[in_block_id]=entry_list_last[in_last_block_id];
+		dblock_write(block_id,block_scratch);
+	}
+}
+
+static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated in this func , and this only affect one node
+{
+	inode dir_inode;
+	inode_read(dir_index,&dir_inode);
+	int total_entry_num;
+	total_entry_num=dir_inode.size/(sizeof(dir_entry));
+	int total_block_num;
+	total_block_num=(total_entry_num-1)/DIR_ENTRY_PER_BLOCK + 1;
+	
+	int last_block_id;
+	int in_last_block_id;
+	if(total_block_num<=DIRECT_BLOCK){
+		last_block_id=dir_inode.blocks[total_block_num-1];
+	}
+	else{
+		dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
+		uint16_t *block_list=(uint16_t *)block_scratch;
+		last_block_id=block_list[total_block_num-1-DIRECT_BLOCK];
+	}
+	in_last_block_id=(total_entry_num-1)%DIR_ENTRY_PER_BLOCK;
+
+	if(total_block_num>DIRECT_BLOCK)
+	{
+		int i,j,entry_block,remain_blocks;
+		for(i=0;i<DIRECT_BLOCK;i++)//first we find in direct block
+		{
+			entry_block=dir_inode.blocks[i];
+			dblock_read(entry_block,block_scratch);
+			dir_entry *entry_list=(dir_entry *)block_scratch;
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+				{
+					if(in_last_block_id==0)//need to free dblock
+					{
+						dblock_free(last_block_id);
+						if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
+							dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
+					}
+					swap_in_last_entry(entry_block,j,,in_last_block_id);
+					dir_inode.size-=sizeof(dir_entry);
+					inode_write(dir_index,&dir_inode);
+					return 0;
+				}
+		}
+
+		dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
+		uint16_t *block_list=(uint16_t *)block_scratch;
+
+		for(i=0;i<total_block_num-DIRECT_BLOCK-1;i++)//the we find in indirect block
+		{
+			dblock_read(block_list[i],block_scratch_1);
+			dir_entry *entry_list=(dir_entry *)block_scratch_1;
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+				{
+					if(in_last_block_id==0)//need to free dblock
+					{
+						dblock_free(last_block_id);
+						if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
+							dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
+					}
+					dir_inode.size-=sizeof(dir_entry);
+					inode_write(dir_index,&dir_inode);
+					return 0;
+				}
+		}
+		//last block
+		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1)
+		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
+		dir_entry *entry_list=(dir_entry *)block_scratch_1;
+		for(j=0;j<final_end;j++)
+			if(same_string(entry_list[j].file_name,filename))
+			{
+				if(in_last_block_id==0)//need to free dblock
+				{
+					dblock_free(last_block_id);
+					if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
+						dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
+				}
+				dir_inode.size-=sizeof(dir_entry);
+				inode_write(dir_index,&dir_inode);
+				return 0;
+			}
+	}
+	else
+	{
+		int i,j,entry_block;
+		for(i=0;i<total_block_num-1;i++)
+		{
+			entry_block=dir_inode.blocks[i];
+			dblock_read(entry_block,block_scratch);
+			dir_entry *entry_list=(dir_entry *)block_scratch;
+			for(j=0;j<DIR_ENTRY_PER_BLOCK;j++)
+				if(same_string(entry_list[j].file_name,filename))
+				{
+					if(in_last_block_id==0)//need to free dblock
+						dblock_free(last_block_id);
+					dir_inode.size-=sizeof(dir_entry);
+					inode_write(dir_index,&dir_inode);
+					return 0;
+				}
+		}
+		//last block
+		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
+		entry_block=dir_inode.blocks[total_block_num-1];
+		dblock_read(entry_block,block_scratch);
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		for(j=0;j<final_end;j++)
+			if(same_string(entry_list[j].file_name,filename))
+			{
+				if(in_last_block_id==0)//need to free dblock
+					dblock_free(last_block_id);
+				dir_inode.size-=sizeof(dir_entry);
+				inode_write(dir_index,&dir_inode);
+				return 0;
+			}
+	}
+	return -1;
+}
+//--- file descriptor helper---------------------------------------------
+static int fd_open(int inode_id, int mode){
+    int i;
+    for (i = 0; i < MAX_OPEN_FILE_NUM; i++)
+        if (fd_table[i].is_using==FALSE){
+            fd_table[i].is_using = TRUE;
+            fd_table[i].cursor = 0;
+            fd_table[i].inode_id = inode_id;
+            fd_table[i].mode = mode;
+            return i;
+        }
+    return -1;
+}
+static void fd_close(int fd) {
+    fd_table[fd].is_using = FALSE;
+}
+static int fd_find_same_num(int inode_id,int mode)
+{
+	int i;
+	int count=0;
+	for(i=0;i<MAX_OPEN_FILE_NUM;i++)
+		if(fd_table[i].is_using && fd_table[i].inode_id==inode_id)
+			count++;
+	return count;
+}
 
 //fs init ------------------------------------------------------
 void fs_init( void) {
@@ -338,14 +621,26 @@ int fs_mkfs( void) {
 	inode temp_root;
 	inode_init(&temp_root,DIRECTORY);
 	inode_write(ROOT_DIR_ID,&temp_root);
+	write_bitmap_block(INODE_BITMAP,ROOT_DIR_ID,1);
 
+	int res;
+	res=dir_entry_add(ROOT_DIR_ID,ROOT_DIR_ID,".");
+	if(res<0){
+		bzero(super_block_scratch,BLOCK_SIZE);
+		sb_write();
+		return -1;
+	}
+	res=dir_entry_add(ROOT_DIR_ID,ROOT_DIR_ID,"..");
+	if(res<0){
+		bzero(super_block_scratch,BLOCK_SIZE);
+		sb_write();
+		return -1;
+	}
 
 	//mount to root
 	pwd = ROOT_DIR_ID;
 	//clear fd_table
 	bzero(fd_table,sizeof(fd_table));
-
-	
 
 	return 0;
 }
