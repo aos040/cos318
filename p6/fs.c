@@ -212,8 +212,10 @@ static int inode_create(int type)// 0 for dir 1 for file
 	inode temp_inode;
 	int alloc_index;
 	alloc_index=inode_alloc();
-	if(alloc_index<0)
+	if(alloc_index<0){
+		ERROR_MSG(("no enough inode space for new inode!\n"))
 		return -1;
+	}
 	inode_init(&temp_inode,type);
 	inode_write(alloc_index,&temp_inode)
 	return alloc_index;
@@ -279,8 +281,10 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
  			if(next_i_inblock==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
 			{
 				indirect_alloc_res=dblock_alloc();
-				if(indirect_alloc_res<0)
+				if(indirect_alloc_res<0){
+					ERROR_MSG(("no enough space for add new dir entry!\n"))
 					return -1;
+				}
 				dir_inode.blocks[DIRECT_BLOCK]=indirect_alloc_res;//mount new indirect index block
 			}
 			//if(next_i_inblock>DIRECT_BLOCK)//need indirect block ,and the indirect index block has been alloced
@@ -291,6 +295,7 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
 			if(alloc_res<0){
 				if(next_i_inblock==DIRECT_BLOCK)
 					dblock_free(indirect_alloc_res);
+				ERROR_MSG(("no enough space for add new dir entry!\n"))
 				return -1;
 			}
 			block_list[next_i_inblock-DIRECT_BLOCK]=alloc_res;//mount new block
@@ -300,8 +305,10 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
 		else //need direct block
 		{
 			alloc_res=dblock_alloc();
-			if(alloc_res<0)
+			if(alloc_res<0){
+				ERROR_MSG(("no enough space for add new dir entry!\n"))
 				return -1;
+			}
 			dir_inode.blocks[next_i_inblock]=alloc_res;//mount new block
 		}
 			dblock_read(alloc_res,block_scratch);
@@ -405,6 +412,7 @@ static int dir_entry_find(int dir_index,char *filename)
 				return entry_list[j].inode_id;
 		}
 	}
+	ERROR_MSG(("file doesn't exist!\n"))
 	return -1;
 }
 
@@ -547,10 +555,13 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 				return 0;
 			}
 	}
+	ERROR_MSG(("file doesn't exist!\n"))
 	return -1;
 }
 //--- file descriptor helper---------------------------------------------
-static int fd_open(int inode_id, int mode){
+//these func just handle fd_table , won't delete inode & data
+static int fd_open(int inode_id, int mode)
+{
     int i;
     for (i = 0; i < MAX_OPEN_FILE_NUM; i++)
         if (fd_table[i].is_using==FALSE){
@@ -562,7 +573,8 @@ static int fd_open(int inode_id, int mode){
         }
     return -1;
 }
-static void fd_close(int fd) {
+static void fd_close(int fd)
+{
     fd_table[fd].is_using = FALSE;
 }
 static int fd_find_same_num(int inode_id,int mode)
@@ -573,6 +585,93 @@ static int fd_find_same_num(int inode_id,int mode)
 		if(fd_table[i].is_using && fd_table[i].inode_id==inode_id)
 			count++;
 	return count;
+}
+//--- path resolve------------------------------------
+
+//caller should save a copy of file_path , because this func will be changed the content 
+static int path_dir_resolve(char * file_path,int temp_pwd)//this just resolve relative path and find inode
+{
+	int path_len=strlen(file_path);
+	if(path_len<=0)
+	{
+		ERROR_MSG(("no path here!\n"))
+		return -1;
+	}
+	int i;
+	for(i=0;i<path_len;i++)
+		if(file_path[i]=='/')
+			break;
+	file_path[i]='\0';
+	int res=dir_entry_find(temp_pwd,file_path);
+	if(res<0){
+		ERROR_MSG(("%s doesn't exist!\n",))
+		return -1;
+	}
+	if(i==path_len)//we reach the last item
+		return res;
+	inode temp;
+	inode_read(res,&temp);
+	if(temp.type!=DIRECTORY)
+	{
+		ERROR_MSG(("%s is a data file not a path!\n",file_path))
+		return -1;
+	}
+	return path_dir_resolve(file_path+i+1,res,mode);
+}
+
+static int path_resolve(char * file_path , int temp_pwd ,int mode)//mode DIRECTORY 0, REAL_FILE 1 , find last dir 2
+{
+	int path_len=strlen(file_path);
+	if(path_len>MAX_PATH_NAME){
+		ERROR_MSG(("too long path!\n"))
+		return -1;
+	}
+	//copy the path
+	char path_buffer[MAX_PATH_NAME];
+	bcopy(file_path,path_buffer,path_len);
+	path_buffer[path_len]='\0';
+	file_path=path_buffer;
+	//trick to decide directory or real file
+	if(mode==REAL_FILE && file_path[path_len-1]=='/')
+	{
+		ERROR_MSG(("try to find a path!\n"))
+		return -1;
+	}
+	if(path_len<=0)
+	{
+		ERROR_MSG(("no path input!\n"))
+		return -1;
+	}
+	if(file_path[0]=='/')//absolute path
+	{
+		if(path_len==1)//only root
+		{
+			if(mode==REAL_FILE)
+			{
+				ERROR_MSG(("/ is a directory not a data file\n"))
+				return -1;
+			}
+			return ROOT_DIR_ID;
+		}
+		//trick to change str and temp_pwd
+		temp_pwd=ROOT_DIR_ID;
+		file_path++;
+		path_len--;
+	}
+	int i;
+	for(i=0;i<path_len;i++)
+		if(file_path[i]=='/')
+			break;
+	if(i==path_len)
+	{
+		int res=dir_entry_find(temp_pwd,file_path);
+		if(res<0){
+
+			ERROR_MSG(("%s doesn't exist!\n",))
+		}
+		return res;
+	}
+	return path_resolve(file_path+i+1,temp_pwd,mode);
 }
 
 //fs init ------------------------------------------------------
