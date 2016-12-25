@@ -42,7 +42,7 @@ int fs_stat( char *fileName, fileStat *buf);
 #define INODE_BITMAP 0
 #define DBLOCK_BITMAP 1
 
-#define DIRECTORY 0
+#define MY_DIRECTORY 0
 #define REAL_FILE 1
 
 
