@@ -12,5 +12,5 @@ void bzero_block( char *block);
 void block_init( void);
 void block_read( int block, char *mem);
 void block_write( int block, char *mem);
-
+void my_bzero_block( int block);
 #endif

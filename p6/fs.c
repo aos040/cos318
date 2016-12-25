@@ -142,7 +142,7 @@ static int dblock_alloc(void)
 		write_bitmap_block(DBLOCK_BITMAP,search_res,1);
 		my_sb->dblock_count++;
 		sb_write();
-		bzero_block(search_res);
+		my_bzero_block(search_res);
 		return search_res;
 	}
 	ERROR_MSG(("alloc data block fail"))
@@ -260,6 +260,11 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 	inode temp;
 	inode_read(inode_id,&temp);
 	int next_block=(temp.size-1+BLOCK_SIZE)/BLOCK_SIZE;//start from 0 , mean the next in-inode blocks id
+	if(next_block>MAX_BLOCKS_INDEX_IN_INODE)
+	{
+		ERROR_MSG(("beyond one inode can handle!\n"))
+		return -1;
+	}
 	if(next_block>=DIRECT_BLOCK)//need indirect block
 	{
 		if(next_i_inblock==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
@@ -311,48 +316,11 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
 
 	if(next_i%DIR_ENTRY_PER_BLOCK==0)//need new block
 	{	
-		int indirect_alloc_res,alloc_res;
-		if(next_i_inblock>=DIRECT_BLOCK)//need indirect block
-		{
- 			if(next_i_inblock==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
-			{
-				indirect_alloc_res=dblock_alloc();
-				if(indirect_alloc_res<0){
-					ERROR_MSG(("no enough space for add new dir entry!\n"))
-					return -1;
-				}
-				dir_inode.blocks[DIRECT_BLOCK]=indirect_alloc_res;//mount new indirect index block
-			}
-			//if(next_i_inblock>DIRECT_BLOCK)//need indirect block ,and the indirect index block has been alloced
- 			//indirect index block
-			dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
-			uint16_t *block_list=(uint16_t *)block_scratch;
-			alloc_res=dblock_alloc();
-			if(alloc_res<0){
-				if(next_i_inblock==DIRECT_BLOCK)
-					dblock_free(indirect_alloc_res);
-				ERROR_MSG(("no enough space for add new dir entry!\n"))
-				return -1;
-			}
-			block_list[next_i_inblock-DIRECT_BLOCK]=alloc_res;//mount new block
-			dblock_write(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
-
-		}
-		else //need direct block
-		{
-			alloc_res=dblock_alloc();
-			if(alloc_res<0){
-				ERROR_MSG(("no enough space for add new dir entry!\n"))
-				return -1;
-			}
-			dir_inode.blocks[next_i_inblock]=alloc_res;//mount new block
-		}
-			dblock_read(alloc_res,block_scratch);
-
-			dir_entry *entry_list=(dir_entry *)block_scratch;
-			entry_list[0]=new_entry;
-
-			dblock_write(alloc_res,block_scratch);
+		int alloc_res=alloc_dblock_mount_to_inode(dir_index);
+		dblock_read(alloc_res,block_scratch);
+		dir_entry *entry_list=(dir_entry *)block_scratch;
+		entry_list[0]=new_entry;
+		dblock_write(alloc_res,block_scratch);
 
 	}
 	else
@@ -748,8 +716,8 @@ int fs_mkfs( void) {
 	my_sb->magic_num=MY_MAGIC;
 	sb_write();
 	//zero bitmaps
-	bzero_block(SUPER_BLOCK+1);
-	bzero_block(SUPER_BLOCK+2);
+	my_bzero_block(SUPER_BLOCK+1);
+	my_bzero_block(SUPER_BLOCK+2);
 	bzero(inode_bitmap_block_scratch,BLOCK_SIZE);
 	bzero(dblock_bitmap_block_scratch,BLOCK_SIZE);
 
@@ -854,11 +822,135 @@ int fs_close( int fd) {
 }
 
 int fs_read( int fd, char *buf, int count) {
-	return -1;
+	if(count<0)
+	{
+		ERROR_MSG(("Wrong count input!\n"))
+		return -1;
+	}
+	if(fd<0||fd>=MAX_OPEN_FILE_NUM)
+	{
+		ERROR_MSG(("Wrong fd input!\n"))
+		return -1;
+	}
+	if(fd_table[fd].is_using==FALSE)
+	{
+		ERROR_MSG(("fd %d is not using!",fd))
+		return -1;
+	}
+	if(fd_table[fd].mode==FS_O_WRONLY)
+	{
+		ERROR_MSG(("can't read the file open as write-only file"))
+		return -1;
+	}
+	inode temp_file;
+	inode_read(fd_table[fd].inode_id,&temp_file);
+	
+	int real_count=0;
+	if(fd_table[fd].cursor+count>=temp_file.size)
+		count=temp_file.size-fd_table[fd].cursor;
+
+	int end_block=(fd_table[fd].cursor+count-1)/BLOCK_SIZE;
+	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%BLOCK_SIZE;
+	
+	while(real_count<count)
+	{
+		int now_block=fd_table[fd].cursor/BLOCK_SIZE;
+		int now_block_id;
+		if(now_block>=DIRECT_BLOCK)
+		{
+			dblock_read(temp_file.blocks[DIRECT_BLOCK],block_scratch);
+			uint16_t *block_list=(uint16_t *)block_scratch;
+			now_block_id=block_list[now_block-DIRECT_BLOCK];
+		}
+		else
+		{
+			now_block_id=temp_file.blocks[now_block];
+		}
+		dblock_read(now_block_id,block_scratch);
+
+		int rdy_count;
+		if(now_block<end_block)
+			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
+		else
+			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
+		bcopy(block_scratch+fd_table[fd].cursor%BLOCK_SIZE,buf,rdy_count);
+		buf+=rdy_count;
+		real_count+=rdy_count;
+		fd_table[fd].cursor+=rdy_count;
+	}
+	return real_count;
 }
 	
 int fs_write( int fd, char *buf, int count) {
-	return -1;
+	if(count<0)
+	{
+		ERROR_MSG(("Wrong count input!\n"))
+		return -1;
+	}
+	if(fd<0||fd>=MAX_OPEN_FILE_NUM)
+	{
+		ERROR_MSG(("Wrong fd input!\n"))
+		return -1;
+	}
+	if(fd_table[fd].is_using==FALSE)
+	{
+		ERROR_MSG(("fd %d is not using!",fd))
+		return -1;
+	}
+	if(fd_table[fd].mode==FS_O_RDONLY)
+	{
+		ERROR_MSG(("can't write the file open as read-only file"))
+		return -1;
+	}
+	inode temp_file;
+	inode_read(fd_table[fd].inode_id,&temp_file);
+	
+	int alloc_count=0;
+	int start_block=(temp_file.size-1)/BLOCK_SIZE+1;
+	int end_block=(fd_table[fd].cursor+count-1)/BLOCK_SIZE;
+	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%BLOCK_SIZE;
+	while(start_block<=end_block)
+	{
+		if(alloc_dblock_mount_to_inode(fd_table[fd].inode_id)<0)
+		{
+			end_block=start_block-1;
+			in_end_block_cursor=BLOCK_SIZE-1;
+			break;
+		}
+		start_block++;
+	}
+	count=end_block*BLOCK_SIZE+in_end_block_cursor+1-temp_file.size;
+	temp_file.size+=count;
+	inode_write()
+	int real_count=0;
+	while(real_count<count)
+	{
+		int now_block=fd_table[fd].cursor/BLOCK_SIZE;
+		int now_block_id;
+		if(now_block>=DIRECT_BLOCK)
+		{
+			dblock_read(temp_file.blocks[DIRECT_BLOCK],block_scratch);
+			uint16_t *block_list=(uint16_t *)block_scratch;
+			now_block_id=block_list[now_block-DIRECT_BLOCK];
+		}
+		else
+		{
+			now_block_id=temp_file.blocks[now_block];
+		}
+		dblock_read(now_block_id,block_scratch);
+
+		int rdy_count;
+		if(now_block<end_block)
+			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
+		else
+			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
+		bcopy(buf,block_scratch+fd_table[fd].cursor%BLOCK_SIZE,rdy_count);
+		dblock_write(now_block_id,block_scratch)
+		buf+=rdy_count;
+		real_count+=rdy_count;
+		fd_table[fd].cursor+=rdy_count;
+	}
+	return real_count;
 }
 
 //we assume the start position of fs_lseek is always SEEK_SET = 0
@@ -1104,6 +1196,17 @@ int fs_stat( char *fileName, fileStat *buf) {
 	buf->links=temp.link_count;
 	buf->size=temp.size;
 	buf->numBlocks=(temp.size-1+BLOCK_SIZE)/BLOCK_SIZE;
+	if(buf->numBlocks>DIRECT_BLOCK)
+		buf->numBlocks++;
 	return 0;
 }
 
+int fs_cd_inode_id(int dir_id)
+{
+	inode temp;
+	inode_read(dir_id,&temp);
+	if(temp.type!=MY_DIRECTORY)
+		return -1;
+	pwd=dir_id;
+	return 0;
+}

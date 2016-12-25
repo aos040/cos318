@@ -53,4 +53,15 @@ bzero_block( char *block) {
     for ( i = 0; i < BLOCK_SIZE; i++)
 	block[i] = 0;
 }
+void my_bzero_block( int block){
+    char block_buff[BLOCK_SIZE];
+    bzero_block(block_buff);
 
+    int ret;
+    
+    ret = fseek( fd, block * BLOCK_SIZE, SEEK_SET);
+    assert( ret == 0);
+    
+    ret = fwrite( block_buff, 1, BLOCK_SIZE, fd);
+    assert( ret == BLOCK_SIZE);
+}

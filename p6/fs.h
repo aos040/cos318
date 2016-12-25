@@ -27,6 +27,7 @@ int fs_stat( char *fileName, fileStat *buf);
 
 //this unix-like file sys is write_through
 
+int fs_cd_inode_id(int dir_id);
 
 
 #define MAX_FILE_COUNT (BLOCK_SIZE*8)
@@ -77,6 +78,8 @@ typedef struct __attribute__ ((__packed__))
 //total size: 32 bytes
 // #define INODE_SIZE 32
 #define INODE_PER_BLOCK (BLOCK_SIZE/32)
+
+#define MAX_BLOCKS_INDEX_IN_INODE (DIRECT_BLOCK+BLOCK_SIZE/16)
 typedef struct __attribute__ ((__packed__))
 {
 	uint32_t size;//in bytes
