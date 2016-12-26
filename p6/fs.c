@@ -17,9 +17,9 @@
 static void strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len without final '\0' buffer
 {
 	if(strlen(src)>dest_max_len)
-		bcopy(src,dest,dest_max_len);
+		bcopy((unsigned char *)src,(unsigned char *)dest,dest_max_len);
 	else
-		bcopy(src,dest,strlen(src));
+		bcopy((unsigned char *)src,(unsigned char *)dest,strlen(src));
 	dest[dest_max_len]='\0';
 }
 
@@ -177,18 +177,18 @@ static int inode_alloc(void)
 }
 
 //caller prepare space for inode and check valid
-static void inode_read(int index,char* inode_buff)
+static void inode_read(int index,inode* inode_buff)
 {
 	char temp_block_scratch[BLOCK_SIZE];
 	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
-	bcopy(temp_block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode),inode_buff,sizeof(inode));
+	bcopy((unsigned char *)(temp_block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode)),(unsigned char *)inode_buff,sizeof(inode));
 }
 //caller prepare space for inode and check valid
-static void inode_write(int index,char* inode_buff)
+static void inode_write(int index,inode* inode_buff)
 {
 	char temp_block_scratch[BLOCK_SIZE];
 	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
-	bcopy(inode_buff,temp_block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode),sizeof(inode));
+	bcopy((unsigned char *)inode_buff,(unsigned char *)(temp_block_scratch+(index%INODE_PER_BLOCK)*sizeof(inode)),sizeof(inode));
 	block_write(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
 }
 static void inode_init(inode *p,int type) // 0 for dir , 1 for file
@@ -196,7 +196,7 @@ static void inode_init(inode *p,int type) // 0 for dir , 1 for file
 	p->size=0;
 	p->type=type;
 	p->link_count=1;
-	bzero(p->blocks,sizeof(p->blocks));
+	bzero((char *)p->blocks,sizeof(p->blocks));
 }
 static int inode_create(int type)// 0 for dir 1 for file
 {
@@ -351,7 +351,7 @@ static int dir_entry_find(int dir_index,char *filename)
 	int total_block_num=(total_entry_num-1+DIR_ENTRY_PER_BLOCK)/DIR_ENTRY_PER_BLOCK;
 	if(total_block_num>=DIRECT_BLOCK)
 	{
-		int i,j,entry_block,remain_blocks;
+		int i,j,entry_block;
 		for(i=0;i<DIRECT_BLOCK;i++)
 		{
 			entry_block=dir_inode.blocks[i];
@@ -453,7 +453,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 
 	if(total_block_num>DIRECT_BLOCK)
 	{
-		int i,j,entry_block,remain_blocks;
+		int i,j,entry_block;
 		for(i=0;i<DIRECT_BLOCK;i++)//first we find in direct block
 		{
 			entry_block=dir_inode.blocks[i];
@@ -498,7 +498,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 				}
 		}
 		//last block
-		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1)
+		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1);
 		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
 		dir_entry *entry_list=(dir_entry *)block_scratch_1;
 		for(j=0;j<final_end;j++)
@@ -645,7 +645,7 @@ static int path_resolve(char * file_path , int temp_pwd ,int mode)
 
 	//copy the path
 	char path_buffer[MAX_PATH_NAME];
-	bcopy(file_path,path_buffer,path_len);
+	bcopy((unsigned char *)file_path,(unsigned char *)path_buffer,path_len);
 	path_buffer[path_len]='\0';
 	file_path=path_buffer;
 	if(file_path[0]=='/')//absolute path
@@ -669,7 +669,7 @@ static int path_resolve(char * file_path , int temp_pwd ,int mode)
 		if(path_len==0)//only root
 			return ROOT_DIR_ID;
 		if(file_path[path_len-1]=='/')//dir allow input: cd abc/ or cd abc  
-			file_path[path_len-1]=='\0';
+			file_path[path_len-1]='\0';
 	}
 	//now we have a prepared relative path
 	return rel_path_dir_resolve(file_path,temp_pwd);
@@ -680,7 +680,7 @@ void fs_init( void) {
 	block_init();
 	/* More code HERE */
 	//load super block
-	my_sb = super_block_scratch;
+	my_sb = (super_b *)super_block_scratch;
 	block_read(SUPER_BLOCK,super_block_scratch);
 	if(my_sb->magic_num != MY_MAGIC) //main sb crash or not formatted
 	{
@@ -696,7 +696,7 @@ void fs_init( void) {
 	//mount to root
 	pwd=(uint16_t)ROOT_DIR_ID;
 	//clear fd_table
-	bzero(fd_table,sizeof(fd_table));
+	bzero((char *)fd_table,sizeof(fd_table));
 
 	//load bitmaps
 	block_read(my_sb->inode_bitmap_place,inode_bitmap_block_scratch);
@@ -704,7 +704,7 @@ void fs_init( void) {
 }
 
 int fs_mkfs( void) {
-	my_sb = super_block_scratch;
+	my_sb = (super_b *)super_block_scratch;
 	my_sb->file_sys_size = FS_SIZE;
 	my_sb->inode_bitmap_place = SUPER_BLOCK+1;
 	my_sb->dblock_bitmap_place = SUPER_BLOCK+2;
@@ -741,7 +741,7 @@ int fs_mkfs( void) {
 	//mount to root
 	pwd = ROOT_DIR_ID;
 	//clear fd_table
-	bzero(fd_table,sizeof(fd_table));
+	bzero((char *)fd_table,sizeof(fd_table));
 
 	return 0;
 }
@@ -871,7 +871,7 @@ int fs_read( int fd, char *buf, int count) {
 			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
 		else
 			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
-		bcopy(block_scratch+fd_table[fd].cursor%BLOCK_SIZE,buf,rdy_count);
+		bcopy((unsigned char *)(block_scratch+fd_table[fd].cursor%BLOCK_SIZE),(unsigned char *)buf,rdy_count);
 		buf+=rdy_count;
 		real_count+=rdy_count;
 		fd_table[fd].cursor+=rdy_count;
@@ -903,7 +903,6 @@ int fs_write( int fd, char *buf, int count) {
 	inode temp_file;
 	inode_read(fd_table[fd].inode_id,&temp_file);
 	
-	int alloc_count=0;
 	int start_block=(temp_file.size-1)/BLOCK_SIZE+1;
 	int end_block=(fd_table[fd].cursor+count-1)/BLOCK_SIZE;
 	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%BLOCK_SIZE;
@@ -942,7 +941,7 @@ int fs_write( int fd, char *buf, int count) {
 			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
 		else
 			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
-		bcopy(buf,block_scratch+fd_table[fd].cursor%BLOCK_SIZE,rdy_count);
+		bcopy((unsigned char *)buf,(unsigned char *)(block_scratch+fd_table[fd].cursor%BLOCK_SIZE),rdy_count);
 		dblock_write(now_block_id,block_scratch);
 		buf+=rdy_count;
 		real_count+=rdy_count;
@@ -1014,7 +1013,7 @@ int fs_rmdir( char *fileName) {
 	int total_block_num=(total_entry_num-1+DIR_ENTRY_PER_BLOCK)/DIR_ENTRY_PER_BLOCK;
 	if(total_block_num>=DIRECT_BLOCK)
 	{
-		int i,j,entry_block,remain_blocks;
+		int i,j,entry_block;
 		for(i=0;i<DIRECT_BLOCK;i++)
 		{
 			entry_block=dir_inode.blocks[i];
@@ -1025,9 +1024,11 @@ int fs_rmdir( char *fileName) {
 				inode temp_i;
 				inode_read(entry_list[i].inode_id,&temp_i);
 				if(temp_i.type==MY_DIRECTORY)
+				{
 					if(same_string(entry_list[i].file_name,".") || same_string(entry_list[i].file_name,".."))
 						continue;
 					fs_rmdir(entry_list[i].file_name);
+				}
 				else
 					fs_unlink(entry_list[i].file_name);
 			}
@@ -1055,7 +1056,7 @@ int fs_rmdir( char *fileName) {
 			}
 		}
 		//last block
-		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1)
+		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1);
 		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
 		dir_entry *entry_list=(dir_entry *)block_scratch_1;
 		for(j=0;j<final_end;j++)
@@ -1149,7 +1150,7 @@ int fs_link( char *old_fileName, char *new_fileName) {
 	new_res=path_resolve(new_fileName,pwd,2);//try to find parent dir 
 	if(new_res<0)
 	{
-		ERROR_MSG(("%s 's parent dir doesn't exist\n"));
+		ERROR_MSG(("%s 's parent dir doesn't exist\n",new_fileName));
 		return -1;
 	}
 	int i;

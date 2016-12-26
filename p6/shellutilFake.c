@@ -42,4 +42,8 @@ writeStr( char *s) {
 	s++;
     }
 }
-
+void writeInt( int i ){
+    char num[12];
+    itoa(i,num);
+    writeStr(num);
+}
