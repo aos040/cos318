@@ -287,7 +287,7 @@ static void shell_ls( void) {
 
     dir_entry temp_entry;
 	fileStat temp_stat;
-    while(fs_read(dir_fd,&temp_entry,sizeof(dir_entry)))
+    while(fs_read(dir_fd,(char *)&temp_entry,sizeof(dir_entry)))
     {
     	fs_stat(temp_entry.file_name,&temp_stat);
 		writeStr(temp_entry.file_name);

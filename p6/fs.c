@@ -14,19 +14,12 @@
 #endif
 
 //static helper func
-static int strlen_safe(char *src,int max_len)//max len without '\0'
+static void strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len without final '\0' buffer
 {
-	int i=0;
-	while(*src++!='\0')
-		i++;
-	if(i>max_len)
-		return max_len;
+	if(strlen(src)>dest_max_len)
+		bcopy(src,dest,dest_max_len);
 	else
-		return i;
-}
-static int strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len without final '\0' buffer
-{
-	bcopy(src,dest,strlen(src,dest_max_len));
+		bcopy(src,dest,strlen(src));
 	dest[dest_max_len]='\0';
 }
 
@@ -94,9 +87,9 @@ static void write_bitmap_block(int i_d,int index,int val) // 0 for inode bitmap,
 	bitmap_block_scratch[nbyte]=the_byte;
 	
 	if(i_d)
-		block_write(sb->dblock_bitmap_place,bitmap_block_scratch);
+		block_write(my_sb->dblock_bitmap_place,bitmap_block_scratch);
 	else
-		block_write(sb->inode_bitmap_place,bitmap_block_scratch);
+		block_write(my_sb->inode_bitmap_place,bitmap_block_scratch);
 }
 static int find_next_free(int i_d)//must alloc(write 1) after call this function
 {
@@ -215,7 +208,7 @@ static int inode_create(int type)// 0 for dir 1 for file
 		return -1;
 	}
 	inode_init(&temp_inode,type);
-	inode_write(alloc_index,&temp_inode)
+	inode_write(alloc_index,&temp_inode);
 	return alloc_index;
 }
 static void inode_free(int index)//free the inode, also free its data
@@ -224,8 +217,7 @@ static void inode_free(int index)//free the inode, also free its data
 	inode inode_temp;
 	if (temp)
 	{
-		
-		inode_read(temp,&inode_temp)
+		inode_read(temp,&inode_temp);
 		int used_data_blocks;//the block for indirect won't be count here 
 		used_data_blocks=inode_temp.size/BLOCK_SIZE;
 		if(inode_temp.size%BLOCK_SIZE)
@@ -267,7 +259,7 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 	}
 	if(next_block>=DIRECT_BLOCK)//need indirect block
 	{
-		if(next_i_inblock==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
+		if(next_block==DIRECT_BLOCK)//need indirect block ,but the indirect index block has not been alloced
 		{
 			alloc_res=dblock_alloc();
 			if(alloc_res<0)
@@ -279,8 +271,8 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 		
 		alloc_res=dblock_alloc();
 		if(alloc_res<0){
-			if(next_i_inblock==DIRECT_BLOCK)
-				dblock_free(temp.blocks[DIRECT_BLOCK])
+			if(next_block==DIRECT_BLOCK)
+				dblock_free(temp.blocks[DIRECT_BLOCK]);
 			return -1;
 		}
 		block_list[next_block-DIRECT_BLOCK]=alloc_res;
@@ -311,7 +303,7 @@ static int dir_entry_add(int dir_index,int son_index,char *filename)
 
 	dir_entry new_entry;
 	new_entry.inode_id=son_index;
-	strcpy_safe(filename,new_entry.filename,MAX_FILE_NAME);
+	strcpy_safe(filename,new_entry.file_name,MAX_FILE_NAME);
 
 
 	if(next_i%DIR_ENTRY_PER_BLOCK==0)//need new block
@@ -382,7 +374,7 @@ static int dir_entry_find(int dir_index,char *filename)
 					return entry_list[j].inode_id;
 		}
 		//last block
-		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1)
+		dblock_read(block_list[total_block_num-DIRECT_BLOCK-1],block_scratch_1);
 		int final_end=total_entry_num%DIR_ENTRY_PER_BLOCK;
 		dir_entry *entry_list=(dir_entry *)block_scratch_1;
 		for(j=0;j<final_end;j++)
@@ -476,7 +468,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 						if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
 							dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
 					}
-					swap_in_last_entry(entry_block,j,,in_last_block_id);
+					swap_in_last_entry(entry_block,j,last_block_id,in_last_block_id);
 					dir_inode.size-=sizeof(dir_entry);
 					inode_write(dir_index,&dir_inode);
 					return 0;
@@ -499,6 +491,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 						if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
 							dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
 					}
+					swap_in_last_entry(entry_block,j,last_block_id,in_last_block_id);
 					dir_inode.size-=sizeof(dir_entry);
 					inode_write(dir_index,&dir_inode);
 					return 0;
@@ -517,6 +510,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 					if(total_block_num==DIRECT_BLOCK+1)//also need to free indirect dblock
 						dblock_free(dir_inode.blocks[DIRECT_BLOCK]);	
 				}
+				swap_in_last_entry(entry_block,j,last_block_id,in_last_block_id);
 				dir_inode.size-=sizeof(dir_entry);
 				inode_write(dir_index,&dir_inode);
 				return 0;
@@ -535,6 +529,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 				{
 					if(in_last_block_id==0)//need to free dblock
 						dblock_free(last_block_id);
+					swap_in_last_entry(entry_block,j,last_block_id,in_last_block_id);
 					dir_inode.size-=sizeof(dir_entry);
 					inode_write(dir_index,&dir_inode);
 					return 0;
@@ -550,6 +545,7 @@ static int dir_entry_delete(int dir_index,char *filename)//unlink not integrated
 			{
 				if(in_last_block_id==0)//need to free dblock
 					dblock_free(last_block_id);
+				swap_in_last_entry(entry_block,j,last_block_id,in_last_block_id);
 				dir_inode.size-=sizeof(dir_entry);
 				inode_write(dir_index,&dir_inode);
 				return 0;
@@ -605,7 +601,7 @@ static int rel_path_dir_resolve(char * file_path,int temp_pwd)//this just resolv
 	file_path[i]='\0';
 	int res=dir_entry_find(temp_pwd,file_path);
 	if(res<0){
-		ERROR_MSG(("%s doesn't exist!\n",))
+		ERROR_MSG(("%s doesn't exist!\n",file_path))
 		return -1;
 	}
 	if(i==path_len)//we reach the last item
@@ -617,7 +613,7 @@ static int rel_path_dir_resolve(char * file_path,int temp_pwd)//this just resolv
 		ERROR_MSG(("%s is a data file not a path!\n",file_path))
 		return -1;
 	}
-	return rel_path_dir_resolve(file_path+i+1,res,mode);
+	return rel_path_dir_resolve(file_path+i+1,res);
 }
 //mode MY_DIRECTORY 0, REAL_FILE 1 , find last dir 2
 //mode 0 allow input d/ or d , 1 find file's inode , 2 find it's parent's inode
@@ -690,19 +686,21 @@ void fs_init( void) {
 	{
 		block_read(SUPER_BLOCK_BACKUP,super_block_scratch);
 		if(my_sb->magic_num != MY_MAGIC)//need formatted
-			mkfs();
+		{
+			fs_mkfs();
 			return;
+		}
 		else
 			block_write(SUPER_BLOCK,super_block_scratch);
 	}
 	//mount to root
-	pwd=ROOT_DIR_ID;
+	pwd=(uint16_t)ROOT_DIR_ID;
 	//clear fd_table
 	bzero(fd_table,sizeof(fd_table));
 
 	//load bitmaps
-	block_read(sb->inode_bitmap_place,inode_bitmap_block_scratch);
-	block_read(sb->dblock_bitmap_place,dblock_bitmap_block_scratch);
+	block_read(my_sb->inode_bitmap_place,inode_bitmap_block_scratch);
+	block_read(my_sb->dblock_bitmap_place,dblock_bitmap_block_scratch);
 }
 
 int fs_mkfs( void) {
@@ -765,7 +763,7 @@ int fs_open( char *fileName, int flags) {
 			path_res=path_resolve(fileName,pwd,2);//try to find parent dir and create?
 			if(path_res<0)
 			{
-				ERROR_MSG(("%s doesn't exist,and its parent dir doesn't exist either\n"));
+				ERROR_MSG(("%s doesn't exist,and its parent dir doesn't exist either\n",fileName));
 				return -1;
 			}
 			int i;
@@ -921,7 +919,7 @@ int fs_write( int fd, char *buf, int count) {
 	}
 	count=end_block*BLOCK_SIZE+in_end_block_cursor+1-temp_file.size;
 	temp_file.size+=count;
-	inode_write()
+	inode_write(fd_table[fd].inode_id,&temp_file);
 	int real_count=0;
 	while(real_count<count)
 	{
@@ -945,7 +943,7 @@ int fs_write( int fd, char *buf, int count) {
 		else
 			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
 		bcopy(buf,block_scratch+fd_table[fd].cursor%BLOCK_SIZE,rdy_count);
-		dblock_write(now_block_id,block_scratch)
+		dblock_write(now_block_id,block_scratch);
 		buf+=rdy_count;
 		real_count+=rdy_count;
 		fd_table[fd].cursor+=rdy_count;
@@ -1047,9 +1045,11 @@ int fs_rmdir( char *fileName) {
 				inode temp_i;
 				inode_read(entry_list[i].inode_id,&temp_i);
 				if(temp_i.type==MY_DIRECTORY)
+				{
 					if(same_string(entry_list[i].file_name,".") || same_string(entry_list[i].file_name,".."))
 						continue;
 					fs_rmdir(entry_list[i].file_name);
+				}
 				else
 					fs_unlink(entry_list[i].file_name);
 			}
@@ -1063,9 +1063,11 @@ int fs_rmdir( char *fileName) {
 			inode temp_i;
 			inode_read(entry_list[i].inode_id,&temp_i);
 			if(temp_i.type==MY_DIRECTORY)
+			{
 				if(same_string(entry_list[i].file_name,".") || same_string(entry_list[i].file_name,".."))
 					continue;
 				fs_rmdir(entry_list[i].file_name);
+			}
 			else
 				fs_unlink(entry_list[i].file_name);
 		}
@@ -1083,9 +1085,11 @@ int fs_rmdir( char *fileName) {
 				inode temp_i;
 				inode_read(entry_list[i].inode_id,&temp_i);
 				if(temp_i.type==MY_DIRECTORY)
+				{
 					if(same_string(entry_list[i].file_name,".") || same_string(entry_list[i].file_name,".."))
 						continue;
 					fs_rmdir(entry_list[i].file_name);
+				}
 				else
 					fs_unlink(entry_list[i].file_name);
 			}
@@ -1100,9 +1104,11 @@ int fs_rmdir( char *fileName) {
 			inode temp_i;
 			inode_read(entry_list[i].inode_id,&temp_i);
 			if(temp_i.type==MY_DIRECTORY)
+			{
 				if(same_string(entry_list[i].file_name,".") || same_string(entry_list[i].file_name,".."))
 					continue;
 				fs_rmdir(entry_list[i].file_name);
+			}
 			else
 				fs_unlink(entry_list[i].file_name);
 		}

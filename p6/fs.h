@@ -4,6 +4,7 @@
 #ifndef FS_INCLUDED
 #define FS_INCLUDED
 
+#include "block.h"
 //number of sectors 
 #define FS_SIZE 2048
 
@@ -56,7 +57,7 @@ int fs_cd_inode_id(int dir_id);
 
 
 #define SB_PADDING (BLOCK_SIZE-18)
-#define MY_MAGIC 8008208820
+#define MY_MAGIC 4008208820
 typedef struct __attribute__ ((__packed__))
 {
 	uint16_t file_sys_size;
