@@ -129,7 +129,9 @@ static void parseLine( void) {
 
 static void readLine( void) {
     int i = 0, c;
-
+//new start
+    bzero(line,SIZEX+1);
+//new end
     do {
     readChar( &c);
     if ( ( i < MAX_LINE) && ( c != RETURN)) {

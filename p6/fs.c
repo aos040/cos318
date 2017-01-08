@@ -288,7 +288,7 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 //this func doesn't check same filename,so we may need to use find before we really insert one file to dir 
 static int dir_entry_add(int dir_index,int son_index,char *filename)
 {
-	ERROR_MSG(("create new_file %s ,in dir %d,new_inode %d,\n",filename,dir_index,son_index))
+	//ERROR_MSG(("create new_file %s ,in dir %d,new_inode %d,\n",filename,dir_index,son_index))
 	//read_bitmap_block(INODE_BITMAP,dir_index)
 	inode dir_inode;
 	inode_read(dir_index,&dir_inode);

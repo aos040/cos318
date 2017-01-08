@@ -80,7 +80,7 @@ typedef struct __attribute__ ((__packed__))
 // #define INODE_SIZE 32
 #define INODE_PER_BLOCK (BLOCK_SIZE/32)
 
-#define MAX_BLOCKS_INDEX_IN_INODE (DIRECT_BLOCK+BLOCK_SIZE/16)
+#define MAX_BLOCKS_INDEX_IN_INODE (DIRECT_BLOCK+BLOCK_SIZE/2)
 typedef struct __attribute__ ((__packed__))
 {
 	uint32_t size;//in bytes
