@@ -262,13 +262,18 @@ static void shell_ls( void) {
     //trick to change dir and save pwd
     fileStat pwd_stat;
     fs_stat(".",&pwd_stat);
-    if(fs_cd(argv[1])<0)
+    if(argv[1]) 
     {
-        writeStr("No such dir!\n");
-        return ;
+
+        printf("argv[1]:%s\n", argv[1]);
+        
+        if(fs_cd(argv[1])<0){
+            writeStr("No such dir!\n");
+            return ;
+        }
     }
     //open dir to read entries
-    int dir_fd=fs_open(argv[1],FS_O_RDONLY);
+    int dir_fd=fs_open(".",FS_O_RDONLY);
     if(dir_fd<0)
     {
     	writeStr("Problem with ls\n");

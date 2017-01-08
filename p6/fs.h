@@ -106,10 +106,9 @@ typedef struct __attribute__ ((__packed__))
 
 // --- above is on-disk   ---
 
-
 // --- below is on-memory ---
 
-#define MAX_OPEN_FILE_NUM 32
+#define MAX_OPEN_FILE_NUM 256
 
 typedef struct 
 {
@@ -118,11 +117,5 @@ typedef struct
 	uint16_t inode_id;
 	uint16_t mode;//(FS_O_RDONLY, FS_O_WRONLY, FS_ORDWR)
 }file_desc;
-
-// typedef struct fs_mem_tree
-// {
-	
-// } my_file_tree;
-
 
 #endif

@@ -93,21 +93,32 @@ def test_get_all_inodes():
     do_exit()
 
 
+def test_small_file():
+    issue('mkfs')
+    issue('create small_file 10')
+    issue('stat small_file') 
+    check_fs_size();
+    do_exit();
+
+
 print "......Starting my tests\n\n"
 sys.stdout.flush()
 spawn_lnxsh()
-test_large_file()
-spawn_lnxsh()
+test_small_file()
 
-#dir tests need to implement shell_ls
-test_large_dir()
-spawn_lnxsh()
-test_dir_frag()
-spawn_lnxsh()
+# spawn_lnxsh()
+# test_large_file()
+# spawn_lnxsh()
 
-test_multi_open()
-spawn_lnxsh()
-test_get_all_handles()
-spawn_lnxsh()
-test_get_all_inodes()
-spawn_lnxsh()
+# #dir tests need to implement shell_ls
+# test_large_dir()
+# spawn_lnxsh()
+# test_dir_frag()
+# spawn_lnxsh()
+
+# test_multi_open()
+# spawn_lnxsh()
+# test_get_all_handles()
+# spawn_lnxsh()
+# test_get_all_inodes()
+# spawn_lnxsh()

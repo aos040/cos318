@@ -170,7 +170,7 @@ clean:
 	rm -f entry-pp.s
 	rm -f usbV86-pp.s
 	rm -f floppy.img
-
+	rm -f disk
 # No, really, clean up!
 distclean: clean
 	rm -f *~
