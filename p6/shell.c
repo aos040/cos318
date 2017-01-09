@@ -129,7 +129,9 @@ static void parseLine( void) {
 
 static void readLine( void) {
     int i = 0, c;
-
+//new start
+    bzero(line,SIZEX+1);
+//new end
     do {
     readChar( &c);
     if ( ( i < MAX_LINE) && ( c != RETURN)) {
@@ -264,12 +266,12 @@ static void shell_ls( void) {
     fs_stat(".",&pwd_stat);
     if(argv[1]) 
     {
-
-        printf("argv[1]:%s\n", argv[1]);
-        
-        if(fs_cd(argv[1])<0){
-            writeStr("No such dir!\n");
-            return ;
+        if(strlen(argv[1])>0){
+            // printf("argv[1]:%s\n", argv[1]);   
+            if(fs_cd(argv[1])<0){
+                writeStr("No such dir!\n");
+                return ;
+            }
         }
     }
     //open dir to read entries

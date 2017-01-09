@@ -31,15 +31,22 @@ int fs_stat( char *fileName, fileStat *buf);
 int fs_cd_inode_id(int dir_id);
 
 
-#define MAX_FILE_COUNT (BLOCK_SIZE*8)
+#define NEW_BLOCK_SIZE 4096
 
-#if (BLOCK_SIZE*DIRECT_BLOCK+BLOCK_SIZE*BLOCK_SIZE/16) < (DATA_BLOCK_NUMBER*BLOCK_SIZE)
-	#define MAX_FILE_SIZE (BLOCK_SIZE*DIRECT_BLOCK+BLOCK_SIZE*BLOCK_SIZE/16)
+
+
+//#define MAX_FILE_COUNT (NEW_BLOCK_SIZE*8)
+
+//max inode count
+#define MAX_FILE_COUNT (2048)
+
+#if (NEW_BLOCK_SIZE*DIRECT_BLOCK+NEW_BLOCK_SIZE*NEW_BLOCK_SIZE/2) < (DATA_BLOCK_NUMBER*NEW_BLOCK_SIZE)
+	#define MAX_FILE_SIZE (NEW_BLOCK_SIZE*DIRECT_BLOCK+NEW_BLOCK_SIZE*NEW_BLOCK_SIZE/2)
 #else
-	#define MAX_FILE_SIZE (DATA_BLOCK_NUMBER*BLOCK_SIZE)
+	#define MAX_FILE_SIZE (DATA_BLOCK_NUMBER*NEW_BLOCK_SIZE)
 #endif
 
-#define MAX_FILE_ONE_DIR (DIR_ENTRY_PER_BLOCK*DIRECT_BLOCK+DIR_ENTRY_PER_BLOCK*BLOCK_SIZE/16)
+#define MAX_FILE_ONE_DIR (DIR_ENTRY_PER_BLOCK*DIRECT_BLOCK+DIR_ENTRY_PER_BLOCK*NEW_BLOCK_SIZE/2)
 
 #define INODE_BITMAP 0
 #define DBLOCK_BITMAP 1
@@ -52,11 +59,13 @@ int fs_cd_inode_id(int dir_id);
 #define SUPER_BLOCK 1
 #define SUPER_BLOCK_BACKUP (FS_SIZE-1)
 #define INODE_BLOCK_NUMBER (MAX_FILE_COUNT/INODE_PER_BLOCK)
+//16
 #define DATA_BLOCK_NUMBER (FS_SIZE-5-INODE_BLOCK_NUMBER)
+//235
 
 
 
-#define SB_PADDING (BLOCK_SIZE-18)
+#define SB_PADDING (NEW_BLOCK_SIZE-18)
 #define MY_MAGIC 4008208820
 typedef struct __attribute__ ((__packed__))
 {
@@ -78,9 +87,12 @@ typedef struct __attribute__ ((__packed__))
 #define INODE_PADDING 0
 //total size: 32 bytes
 // #define INODE_SIZE 32
-#define INODE_PER_BLOCK (BLOCK_SIZE/32)
+#define INODE_PER_BLOCK (NEW_BLOCK_SIZE/32)
+//128
 
-#define MAX_BLOCKS_INDEX_IN_INODE (DIRECT_BLOCK+BLOCK_SIZE/16)
+#define MAX_BLOCKS_INDEX_IN_INODE (DIRECT_BLOCK+NEW_BLOCK_SIZE/2)
+//11+2048=2059
+
 typedef struct __attribute__ ((__packed__))
 {
 	uint32_t size;//in bytes
@@ -93,16 +105,16 @@ typedef struct __attribute__ ((__packed__))
 //id for No. in inode table
 #define ROOT_DIR_ID 0
 #define DIR_ENTRY_PADDING (64-2-MAX_FILE_NAME-1)
-//total size: 64 bytes
-#define DIR_ENTRY_PER_BLOCK (BLOCK_SIZE/64)
+//dir entry total size: 64 bytes
+#define DIR_ENTRY_PER_BLOCK (NEW_BLOCK_SIZE/64)
+//64
+
 typedef struct __attribute__ ((__packed__))
 {
 	uint16_t inode_id;
 	char file_name[MAX_FILE_NAME+1];
-
 	char _padding[DIR_ENTRY_PADDING];
 }dir_entry;
-
 
 // --- above is on-disk   ---
 

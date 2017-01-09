@@ -13,6 +13,24 @@
 #define ERROR_MSG(m)
 #endif
 
+//
+static void new_block_write( int block, char *mem)
+{
+	int i;
+	for(i=0;i<NEW_BLOCK_SIZE/BLOCK_SIZE;i++)
+	{
+		block_write(block*8+i,mem+i*BLOCK_SIZE);
+	}
+}
+static void new_block_read( int block, char *mem)
+{
+	int i;
+	for(i=0;i<NEW_BLOCK_SIZE/BLOCK_SIZE;i++)
+	{
+		block_read(block*8+i,mem+i*BLOCK_SIZE);
+	}
+}
+
 //static helper func
 static void strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len without final '\0' buffer
 {
@@ -24,13 +42,13 @@ static void strcpy_safe(char *src,char *dest,int dest_max_len)//dest max len wit
 }
 
 //useful var--------------------------------------
-static char block_scratch[BLOCK_SIZE];//inode read/write/free use scratch
-static char block_scratch_1[BLOCK_SIZE];
+static char block_scratch[NEW_BLOCK_SIZE];//inode read/write/free use scratch
+static char block_scratch_1[NEW_BLOCK_SIZE];
 
-static char inode_bitmap_block_scratch[BLOCK_SIZE];
-static char dblock_bitmap_block_scratch[BLOCK_SIZE];
+static char inode_bitmap_block_scratch[NEW_BLOCK_SIZE];
+static char dblock_bitmap_block_scratch[NEW_BLOCK_SIZE];
 
-static char super_block_scratch[BLOCK_SIZE];
+static char super_block_scratch[NEW_BLOCK_SIZE];
 
 static super_b * my_sb= (super_b *)super_block_scratch;
 
@@ -44,8 +62,8 @@ static uint16_t dblock_bitmap_last=0;//DATA_BLOCK_NUMBER-1;//start from end
 //superblock write helper------------------
 static void sb_write()
 {
-	block_write(SUPER_BLOCK,super_block_scratch);
-	block_write(SUPER_BLOCK_BACKUP,super_block_scratch);
+	new_block_write(SUPER_BLOCK,super_block_scratch);
+	new_block_write(SUPER_BLOCK_BACKUP,super_block_scratch);
 }
 //bitmap helper-----------------------------
 
@@ -82,9 +100,9 @@ static void write_bitmap_block(int i_d,int index,int val) // 0 for inode bitmap,
 	bitmap_block_scratch[nbyte]=the_byte;
 	
 	if(i_d)
-		block_write(my_sb->dblock_bitmap_place,bitmap_block_scratch);
+		new_block_write(my_sb->dblock_bitmap_place,bitmap_block_scratch);
 	else
-		block_write(my_sb->inode_bitmap_place,bitmap_block_scratch);
+		new_block_write(my_sb->inode_bitmap_place,bitmap_block_scratch);
 }
 static int find_next_free(int i_d)//must alloc(write 1) after this function find the result
 {
@@ -149,12 +167,12 @@ static void dblock_free(int index)
 //caller prepare space for whole data block
 static void dblock_read(int index,char* block_buff)
 {
-	block_read(my_sb->dblock_start+index,block_buff);
+	new_block_read(my_sb->dblock_start+index,block_buff);
 }
 //caller prepare space for whole data block
 static void dblock_write(int index,char* block_buff)
 {
-	block_write(my_sb->dblock_start+index,block_buff);
+	new_block_write(my_sb->dblock_start+index,block_buff);
 }
 //inode alloc & free & read & write & init helper ----------------------------------
 static int inode_alloc(void)
@@ -174,19 +192,19 @@ static int inode_alloc(void)
 //caller prepare space for inode and check valid
 static void inode_read(int index,inode* inode_buff)
 {
-	char temp_block_scratch[BLOCK_SIZE];
-	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
+	char temp_block_scratch[NEW_BLOCK_SIZE];
+	new_block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
 	inode *inode_block_scratch=(inode *)temp_block_scratch;
 	bcopy((unsigned char *)(inode_block_scratch+(index%INODE_PER_BLOCK)),(unsigned char *)inode_buff,sizeof(inode));
 }
 //caller prepare space for inode and check valid
 static void inode_write(int index,inode* inode_buff)
 {
-	char temp_block_scratch[BLOCK_SIZE];
-	block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
+	char temp_block_scratch[NEW_BLOCK_SIZE];
+	new_block_read(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
 	inode *inode_block_scratch=(inode *)temp_block_scratch;
 	bcopy((unsigned char *)inode_buff,(unsigned char *)(inode_block_scratch+(index%INODE_PER_BLOCK)),sizeof(inode));
-	block_write(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
+	new_block_write(my_sb->inode_start+(index/INODE_PER_BLOCK),temp_block_scratch);
 }
 static void inode_init(inode *p,int type) // 0 for dir , 1 for file
 {
@@ -216,7 +234,7 @@ static void inode_free(int index)//free the inode, also free its data
 	{
 		inode_read(index,&inode_temp);
 		int used_data_blocks;//total blocks used , not included indirect index block
-		used_data_blocks=(inode_temp.size-1+BLOCK_SIZE)/BLOCK_SIZE;
+		used_data_blocks=(inode_temp.size-1+NEW_BLOCK_SIZE)/NEW_BLOCK_SIZE;
 		if(used_data_blocks>DIRECT_BLOCK)//use indirect block
 		{
 			//use scratch here
@@ -244,7 +262,7 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 	int alloc_res;
 	inode temp;
 	inode_read(inode_id,&temp);
-	int next_block=(temp.size-1+BLOCK_SIZE)/BLOCK_SIZE;//start from 0 , mean the next in-inode blocks id
+	int next_block=(temp.size-1+NEW_BLOCK_SIZE)/NEW_BLOCK_SIZE;//start from 0 , mean the next in-inode blocks id
 	if(next_block>MAX_BLOCKS_INDEX_IN_INODE)
 	{
 		ERROR_MSG(("beyond one inode can handle!\n"))
@@ -288,7 +306,7 @@ static int alloc_dblock_mount_to_inode(int inode_id)
 //this func doesn't check same filename,so we may need to use find before we really insert one file to dir 
 static int dir_entry_add(int dir_index,int son_index,char *filename)
 {
-	ERROR_MSG(("create new_file %s ,in dir %d,new_inode %d,\n",filename,dir_index,son_index))
+	//ERROR_MSG(("create new_file %s ,in dir %d,new_inode %d,\n",filename,dir_index,son_index))
 	//read_bitmap_block(INODE_BITMAP,dir_index)
 	inode dir_inode;
 	inode_read(dir_index,&dir_inode);
@@ -687,17 +705,17 @@ void fs_init( void) {
 	/* More code HERE */
 	//load super block
 	my_sb = (super_b *)super_block_scratch;
-	block_read(SUPER_BLOCK,super_block_scratch);
+	new_block_read(SUPER_BLOCK,super_block_scratch);
 	if(my_sb->magic_num != MY_MAGIC) //main sb crash or not formatted
 	{
-		block_read(SUPER_BLOCK_BACKUP,super_block_scratch);
+		new_block_read(SUPER_BLOCK_BACKUP,super_block_scratch);
 		if(my_sb->magic_num != MY_MAGIC)//need formatted
 		{
 			fs_mkfs();
 			return;
 		}
 		else
-			block_write(SUPER_BLOCK,super_block_scratch);
+			new_block_write(SUPER_BLOCK,super_block_scratch);
 	}
 	//mount to root
 	pwd=(uint16_t)ROOT_DIR_ID;
@@ -705,8 +723,8 @@ void fs_init( void) {
 	bzero((char *)fd_table,sizeof(fd_table));
 
 	//load bitmaps
-	block_read(my_sb->inode_bitmap_place,inode_bitmap_block_scratch);
-	block_read(my_sb->dblock_bitmap_place,dblock_bitmap_block_scratch);
+	new_block_read(my_sb->inode_bitmap_place,inode_bitmap_block_scratch);
+	new_block_read(my_sb->dblock_bitmap_place,dblock_bitmap_block_scratch);
 }
 
 int fs_mkfs( void) {
@@ -722,8 +740,8 @@ int fs_mkfs( void) {
 	//zero bitmaps
 	my_bzero_block(my_sb->inode_bitmap_place);
 	my_bzero_block(my_sb->dblock_bitmap_place);
-	bzero(inode_bitmap_block_scratch,BLOCK_SIZE);
-	bzero(dblock_bitmap_block_scratch,BLOCK_SIZE);
+	bzero(inode_bitmap_block_scratch,NEW_BLOCK_SIZE);
+	bzero(dblock_bitmap_block_scratch,NEW_BLOCK_SIZE);
 
 	inode temp_root;
 	inode_init(&temp_root,MY_DIRECTORY);
@@ -733,13 +751,13 @@ int fs_mkfs( void) {
 	int res;
 	res=dir_entry_add(ROOT_DIR_ID,ROOT_DIR_ID,".");
 	if(res<0){
-		bzero(super_block_scratch,BLOCK_SIZE);
+		bzero(super_block_scratch,NEW_BLOCK_SIZE);
 		sb_write();
 		return -1;
 	}
 	res=dir_entry_add(ROOT_DIR_ID,ROOT_DIR_ID,"..");
 	if(res<0){
-		bzero(super_block_scratch,BLOCK_SIZE);
+		bzero(super_block_scratch,NEW_BLOCK_SIZE);
 		sb_write();
 		return -1;
 	}
@@ -862,12 +880,12 @@ int fs_read( int fd, char *buf, int count) {
 	if(fd_table[fd].cursor+count>temp_file.size)
 		count=temp_file.size-fd_table[fd].cursor;
 
-	int end_block=(fd_table[fd].cursor+count-1)/BLOCK_SIZE;
-	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%BLOCK_SIZE;
+	int end_block=(fd_table[fd].cursor+count-1)/NEW_BLOCK_SIZE;
+	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%NEW_BLOCK_SIZE;
 	
 	while(real_count<count)
 	{
-		int now_block=fd_table[fd].cursor/BLOCK_SIZE;
+		int now_block=fd_table[fd].cursor/NEW_BLOCK_SIZE;
 		int now_block_id;
 		if(now_block>=DIRECT_BLOCK)
 		{
@@ -883,10 +901,10 @@ int fs_read( int fd, char *buf, int count) {
 
 		int rdy_count;
 		if(now_block<end_block)
-			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
+			rdy_count=NEW_BLOCK_SIZE-fd_table[fd].cursor%NEW_BLOCK_SIZE;
 		else
-			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
-		bcopy((unsigned char *)(block_scratch+fd_table[fd].cursor%BLOCK_SIZE),(unsigned char *)buf,rdy_count);
+			rdy_count=in_end_block_cursor-fd_table[fd].cursor%NEW_BLOCK_SIZE+1;
+		bcopy((unsigned char *)(block_scratch+fd_table[fd].cursor%NEW_BLOCK_SIZE),(unsigned char *)buf,rdy_count);
 		buf+=rdy_count;
 		real_count+=rdy_count;
 		fd_table[fd].cursor+=rdy_count;
@@ -923,26 +941,26 @@ int fs_write( int fd, char *buf, int count) {
 	inode_read(fd_table[fd].inode_id,&temp_file);
 	int temp_size=temp_file.size;
 
-	int total_block_num=(temp_file.size-1+BLOCK_SIZE)/BLOCK_SIZE;
-	int end_block_num=(fd_table[fd].cursor+count-1+BLOCK_SIZE)/BLOCK_SIZE;
-	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%BLOCK_SIZE;
+	int total_block_num=(temp_file.size-1+NEW_BLOCK_SIZE)/NEW_BLOCK_SIZE;
+	int end_block_num=(fd_table[fd].cursor+count-1+NEW_BLOCK_SIZE)/NEW_BLOCK_SIZE;
+	int in_end_block_cursor=(fd_table[fd].cursor+count-1)%NEW_BLOCK_SIZE;
 	while(total_block_num<end_block_num)
 	{
 		if(alloc_dblock_mount_to_inode(fd_table[fd].inode_id)<0)
 		{
 			end_block_num=total_block_num;
-			in_end_block_cursor=BLOCK_SIZE-1;
+			in_end_block_cursor=NEW_BLOCK_SIZE-1;
 			break;
 		}
 		inode_read(fd_table[fd].inode_id,&temp_file);
-		temp_file.size+=BLOCK_SIZE;
+		temp_file.size+=NEW_BLOCK_SIZE;
 		inode_write(fd_table[fd].inode_id,&temp_file);
 		total_block_num++;
 	}
 	//there may be some new dblocks , so we need the newest inode
 	//inode_read(fd_table[fd].inode_id,&temp_file);
 	
-	count=(end_block_num-1)*BLOCK_SIZE+in_end_block_cursor-fd_table[fd].cursor+1;
+	count=(end_block_num-1)*NEW_BLOCK_SIZE+in_end_block_cursor-fd_table[fd].cursor+1;
 
 	if(fd_table[fd].cursor+count>temp_size)
 		temp_file.size=fd_table[fd].cursor+count;
@@ -954,7 +972,7 @@ int fs_write( int fd, char *buf, int count) {
 	int real_count=0;
 	while(real_count<count)
 	{
-		int now_block=fd_table[fd].cursor/BLOCK_SIZE;
+		int now_block=fd_table[fd].cursor/NEW_BLOCK_SIZE;
 		int now_block_id;
 		if(now_block>=DIRECT_BLOCK)
 		{
@@ -970,10 +988,10 @@ int fs_write( int fd, char *buf, int count) {
 
 		int rdy_count;
 		if(now_block<end_block_num-1)
-			rdy_count=BLOCK_SIZE-fd_table[fd].cursor%BLOCK_SIZE;
+			rdy_count=NEW_BLOCK_SIZE-fd_table[fd].cursor%NEW_BLOCK_SIZE;
 		else
-			rdy_count=in_end_block_cursor-fd_table[fd].cursor%BLOCK_SIZE+1;
-		bcopy((unsigned char *)buf,(unsigned char *)(block_scratch+fd_table[fd].cursor%BLOCK_SIZE),rdy_count);
+			rdy_count=in_end_block_cursor-fd_table[fd].cursor%NEW_BLOCK_SIZE+1;
+		bcopy((unsigned char *)buf,(unsigned char *)(block_scratch+fd_table[fd].cursor%NEW_BLOCK_SIZE),rdy_count);
 		dblock_write(now_block_id,block_scratch);
 		buf+=rdy_count;
 		real_count+=rdy_count;
@@ -1036,7 +1054,7 @@ int fs_mkdir( char *fileName) {
 }
 
 //we assume -r is set
-int fs_rmdir( char *fileName) {
+int fs_rmdir_part( char *fileName) {
 	int dir_res=path_resolve(fileName,pwd,MY_DIRECTORY);
 	if(dir_res<0)
 	{
@@ -1060,8 +1078,8 @@ int fs_rmdir( char *fileName) {
 	pwd=dir_res;
 	//because we may need recursion , we need to use local variables block scratch and block scratch1
 
-	char block_scratch[BLOCK_SIZE];
-	char block_scratch_1[BLOCK_SIZE];
+	char block_scratch[NEW_BLOCK_SIZE];
+	char block_scratch_1[NEW_BLOCK_SIZE];
 
 	if(total_block_num>DIRECT_BLOCK)
 	{
@@ -1081,7 +1099,7 @@ int fs_rmdir( char *fileName) {
 				{
 					if(same_string(entry_list[j].file_name,".") || same_string(entry_list[j].file_name,".."))
 						continue;
-					fs_rmdir(entry_list[j].file_name);
+					fs_rmdir_part(entry_list[j].file_name);
 				}
 				else
 					fs_unlink(entry_list[j].file_name);
@@ -1099,7 +1117,7 @@ int fs_rmdir( char *fileName) {
 			{
 				if(same_string(entry_list[j].file_name,".") || same_string(entry_list[j].file_name,".."))
 					continue;
-				fs_rmdir(entry_list[j].file_name);
+				fs_rmdir_part(entry_list[j].file_name);
 			}
 			else
 				fs_unlink(entry_list[j].file_name);
@@ -1124,7 +1142,7 @@ int fs_rmdir( char *fileName) {
 			{
 				if(same_string(entry_list[j].file_name,".") || same_string(entry_list[j].file_name,".."))
 					continue;
-				fs_rmdir(entry_list[j].file_name);
+				fs_rmdir_part(entry_list[j].file_name);
 			}
 			else
 				fs_unlink(entry_list[j].file_name);
@@ -1143,15 +1161,29 @@ int fs_rmdir( char *fileName) {
 		{
 			if(same_string(entry_list[j].file_name,".") || same_string(entry_list[j].file_name,".."))
 				continue;
-			fs_rmdir(entry_list[j].file_name);
+			fs_rmdir_part(entry_list[j].file_name);
 		}
 		else
 			fs_unlink(entry_list[j].file_name);
 	}
-	
-	inode_free(dir_res);
 	pwd=save_pwd;
+	if(dir_res!=ROOT_DIR_ID)
+		inode_free(dir_res);
+	else
+		return -1;
 	return 0;
+}
+int fs_rmdir(char *fileName)
+{
+	if(fs_rmdir_part(fileName)==0){
+		int parent_res=path_resolve(fileName,pwd,2);//try to find parent dir 
+		int i;
+		for(i=strlen(fileName)-1;i>=0;i--)//cut the last term
+			if(fileName[i]=='/')
+				break;
+		i++;
+		dir_entry_delete(parent_res,fileName+i);
+	}
 }
 
 int fs_cd( char *dirName) {
@@ -1246,7 +1278,7 @@ int fs_stat( char *fileName, fileStat *buf) {
 	buf->type=temp.type+1;
 	buf->links=temp.link_count;
 	buf->size=temp.size;
-	buf->numBlocks=(temp.size-1+BLOCK_SIZE)/BLOCK_SIZE;
+	buf->numBlocks=(temp.size-1+NEW_BLOCK_SIZE)/NEW_BLOCK_SIZE;
 	if(buf->numBlocks>DIRECT_BLOCK)
 		buf->numBlocks++;
 	return 0;
