@@ -109,6 +109,12 @@ spawn_lnxsh()
 test_multi_open()
 spawn_lnxsh()
 test_get_all_handles()
+<<<<<<< HEAD
 # spawn_lnxsh()
 # test_get_all_inodes()
 # spawn_lnxsh()
+=======
+spawn_lnxsh()
+test_get_all_inodes()
+spawn_lnxsh()
+>>>>>>> origin/master
