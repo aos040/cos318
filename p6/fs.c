@@ -772,6 +772,8 @@ int fs_mkfs( void) {
 
 int fs_open( char *fileName, int flags) {
 	int path_res=path_resolve(fileName,pwd,MY_DIRECTORY);
+	if(flags!=FS_O_RDONLY && flags!= FS_O_WRONLY && flags!= FS_O_RDWR)
+		return -1;
 	int new_fd=fd_open(path_res,flags);
 	if(new_fd<0)
 		return -1;
@@ -1247,6 +1249,11 @@ int fs_unlink( char *fileName) {
 	}
 	inode temp;
 	inode_read(res,&temp);
+	if(temp.type==MY_DIRECTORY)
+	{
+		ERROR_MSG(("try to unlink a dir!\n"))
+		return -1;
+	}
 	temp.link_count--;
 	inode_write(res,&temp);
 	if(temp.link_count==0)

@@ -58,10 +58,14 @@ void my_bzero_block( int block){
     bzero_block(block_buff);
 
     int ret;
+    int i;
+    for(i=0;i<8;i++)
+    {
+        ret = fseek( fd, (block*8+i) * BLOCK_SIZE, SEEK_SET);
+        assert( ret == 0);
+        
+        ret = fwrite( block_buff, 1, BLOCK_SIZE, fd);
+        assert( ret == BLOCK_SIZE);
+    }
     
-    ret = fseek( fd, block * BLOCK_SIZE, SEEK_SET);
-    assert( ret == 0);
-    
-    ret = fwrite( block_buff, 1, BLOCK_SIZE, fd);
-    assert( ret == BLOCK_SIZE);
 }

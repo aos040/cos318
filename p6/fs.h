@@ -57,10 +57,10 @@ int fs_cd_inode_id(int dir_id);
 
 // -- super block -----------------------------------
 #define SUPER_BLOCK 1
-#define SUPER_BLOCK_BACKUP (FS_SIZE-1)
+#define SUPER_BLOCK_BACKUP (FS_SIZE/8 -1)
 #define INODE_BLOCK_NUMBER (MAX_FILE_COUNT/INODE_PER_BLOCK)
 //16
-#define DATA_BLOCK_NUMBER (FS_SIZE-5-INODE_BLOCK_NUMBER)
+#define DATA_BLOCK_NUMBER (FS_SIZE/8 -5-INODE_BLOCK_NUMBER)
 //235
 
 

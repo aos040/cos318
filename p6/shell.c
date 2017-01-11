@@ -310,7 +310,7 @@ static void shell_ls( void) {
 		writeInt(temp_stat.size);
 		writeStr("\n");   	
     }
-
+    fs_close(dir_fd);
 
     fs_cd_inode_id(pwd_stat.inodeNo);
 }

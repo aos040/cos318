@@ -1,0 +1,926 @@
+......Starting my tests
+
+
+ShellShock Version 0.000003
+
+# # OK
+# OK
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # Name                             Type Inode Size
+.                                D    1     7808
+..                               D    0     192
+f1                               F    2     1
+f2                               F    3     1
+f3                               F    4     1
+f4                               F    5     1
+f5                               F    6     1
+f6                               F    7     1
+f7                               F    8     1
+f8                               F    9     1
+f9                               F    10     1
+f10                              F    11     1
+f11                              F    12     1
+f12                              F    13     1
+f13                              F    14     1
+f14                              F    15     1
+f15                              F    16     1
+f16                              F    17     1
+f17                              F    18     1
+f18                              F    19     1
+f19                              F    20     1
+f20                              F    21     1
+f21                              F    22     1
+f22                              F    23     1
+f23                              F    24     1
+f24                              F    25     1
+f25                              F    26     1
+f26                              F    27     1
+f27                              F    28     1
+f28                              F    29     1
+f29                              F    30     1
+f30                              F    31     1
+f31                              F    32     1
+f32                              F    33     1
+f33                              F    34     1
+f34                              F    35     1
+f35                              F    36     1
+f36                              F    37     1
+f37                              F    38     1
+f38                              F    39     1
+f39                              F    40     1
+f40                              F    41     1
+f41                              F    42     1
+f42                              F    43     1
+f43                              F    44     1
+f44                              F    45     1
+f45                              F    46     1
+f46                              F    47     1
+f47                              F    48     1
+f48                              F    49     1
+f49                              F    50     1
+f50                              F    51     1
+f51                              F    52     1
+f52                              F    53     1
+f53                              F    54     1
+f54                              F    55     1
+f55                              F    56     1
+f56                              F    57     1
+f57                              F    58     1
+f58                              F    59     1
+f59                              F    60     1
+f60                              F    61     1
+f61                              F    62     1
+f62                              F    63     1
+f63                              F    64     1
+f64                              F    65     1
+f65                              F    66     1
+f66                              F    67     1
+f67                              F    68     1
+f68                              F    69     1
+f69                              F    70     1
+f70                              F    71     1
+f71                              F    72     1
+f72                              F    73     1
+f73                              F    74     1
+f74                              F    75     1
+f75                              F    76     1
+f76                              F    77     1
+f77                              F    78     1
+f78                              F    79     1
+f79                              F    80     1
+f80                              F    81     1
+f81                              F    82     1
+f82                              F    83     1
+f83                              F    84     1
+f84                              F    85     1
+f85                              F    86     1
+f86                              F    87     1
+f87                              F    88     1
+f88                              F    89     1
+f89                              F    90     1
+f90                              F    91     1
+f91                              F    92     1
+f92                              F    93     1
+f93                              F    94     1
+f94                              F    95     1
+f95                              F    96     1
+f96                              F    97     1
+f97                              F    98     1
+f98                              F    99     1
+f99                              F    100     1
+f100                             F    101     1
+f101                             F    102     1
+f102                             F    103     1
+f103                             F    104     1
+f104                             F    105     1
+f105                             F    106     1
+f106                             F    107     1
+f107                             F    108     1
+f108                             F    109     1
+f109                             F    110     1
+f110                             F    111     1
+f111                             F    112     1
+f112                             F    113     1
+f113                             F    114     1
+f114                             F    115     1
+f115                             F    116     1
+f116                             F    117     1
+f117                             F    118     1
+f118                             F    119     1
+f119                             F    120     1
+f120                             F    121     1
+# A
+# A
+# A
+# OK
+#     Inode No         : 1
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 7808
+    Blocks allocated : 2
+# Goodbye
+ShellShock Version 0.000003
+
+# # OK
+# OK
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #     Inode No         : 1
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 7808
+    Blocks allocated : 2
+# # #     Inode No         : 1
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 7680
+    Blocks allocated : 2
+# # # # # # # Name                             Type Inode Size
+.                                D    1     8064
+..                               D    0     192
+f1                               F    2     1
+f2                               F    3     1
+f3                               F    4     1
+f4                               F    5     1
+f5                               F    6     1
+f6                               F    7     1
+f7                               F    8     1
+f8                               F    9     1
+f9                               F    10     1
+f10                              F    11     1
+f11                              F    12     1
+f12                              F    13     1
+f13                              F    14     1
+f14                              F    15     1
+f15                              F    16     1
+f16                              F    17     1
+f17                              F    18     1
+f18                              F    19     1
+f19                              F    20     1
+f20                              F    21     1
+f21                              F    22     1
+f22                              F    23     1
+f23                              F    24     1
+f24                              F    25     1
+f25                              F    26     1
+f26                              F    27     1
+f27                              F    28     1
+f28                              F    29     1
+f29                              F    30     1
+f30                              F    31     1
+f31                              F    32     1
+f32                              F    33     1
+f33                              F    34     1
+f34                              F    35     1
+f35                              F    36     1
+f36                              F    37     1
+f37                              F    38     1
+f38                              F    39     1
+f39                              F    40     1
+f40                              F    41     1
+f41                              F    42     1
+f42                              F    43     1
+f43                              F    44     1
+f44                              F    45     1
+f45                              F    46     1
+f46                              F    47     1
+f47                              F    48     1
+f48                              F    49     1
+f49                              F    50     1
+f50                              F    51     1
+f51                              F    52     1
+f52                              F    53     1
+f53                              F    54     1
+f54                              F    55     1
+f55                              F    56     1
+f56                              F    57     1
+f57                              F    58     1
+f58                              F    59     1
+f59                              F    60     1
+f60                              F    61     1
+f61                              F    62     1
+f62                              F    63     1
+f63                              F    64     1
+f64                              F    65     1
+f65                              F    66     1
+f66                              F    67     1
+f67                              F    68     1
+f68                              F    69     1
+f69                              F    70     1
+f70                              F    71     1
+f71                              F    72     1
+f72                              F    73     1
+f73                              F    74     1
+f74                              F    75     1
+f75                              F    76     1
+f76                              F    77     1
+f77                              F    78     1
+f78                              F    79     1
+f79                              F    80     1
+f80                              F    81     1
+f81                              F    82     1
+f82                              F    83     1
+f83                              F    84     1
+f84                              F    85     1
+f85                              F    86     1
+f86                              F    87     1
+f87                              F    88     1
+f88                              F    89     1
+f89                              F    90     1
+f90                              F    91     1
+f91                              F    92     1
+f92                              F    93     1
+f93                              F    94     1
+f94                              F    95     1
+f95                              F    96     1
+f96                              F    97     1
+f97                              F    98     1
+f98                              F    99     1
+f99                              F    100     1
+f100                             F    101     1
+f101                             F    102     1
+f102                             F    103     1
+f103                             F    104     1
+f104                             F    105     1
+f105                             F    106     1
+f106                             F    107     1
+f107                             F    108     1
+f108                             F    109     1
+f109                             F    110     1
+f110                             F    111     1
+f111                             F    112     1
+f112                             F    113     1
+f113                             F    114     1
+f114                             F    115     1
+f115                             F    116     1
+f116                             F    117     1
+f117                             F    118     1
+f118                             F    119     1
+f119                             F    122     1
+f120                             F    123     1
+f121                             F    124     1
+f122                             F    125     1
+f123                             F    126     1
+f124                             F    127     1
+# Goodbye
+ShellShock Version 0.000003
+
+# # File handle is : 0
+# File handle is : 1
+# File handle is : 2
+# Done
+# Data read in : hello
+# Done
+# Data read in : world
+# OK
+# Data read in : there
+# Goodbye
+ShellShock Version 0.000003
+
+# # File handle is : 0
+# File handle is : 1
+# File handle is : 2
+# File handle is : 3
+# File handle is : 4
+# File handle is : 5
+# File handle is : 6
+# File handle is : 7
+# File handle is : 8
+# File handle is : 9
+# File handle is : 10
+# File handle is : 11
+# File handle is : 12
+# File handle is : 13
+# File handle is : 14
+# File handle is : 15
+# File handle is : 16
+# File handle is : 17
+# File handle is : 18
+# File handle is : 19
+# File handle is : 20
+# File handle is : 21
+# File handle is : 22
+# File handle is : 23
+# File handle is : 24
+# File handle is : 25
+# File handle is : 26
+# File handle is : 27
+# File handle is : 28
+# File handle is : 29
+# File handle is : 30
+# File handle is : 31
+# File handle is : 32
+# File handle is : 33
+# File handle is : 34
+# File handle is : 35
+# File handle is : 36
+# File handle is : 37
+# File handle is : 38
+# File handle is : 39
+# File handle is : 40
+# File handle is : 41
+# File handle is : 42
+# File handle is : 43
+# File handle is : 44
+# File handle is : 45
+# File handle is : 46
+# File handle is : 47
+# File handle is : 48
+# File handle is : 49
+# File handle is : 50
+# File handle is : 51
+# File handle is : 52
+# File handle is : 53
+# File handle is : 54
+# File handle is : 55
+# File handle is : 56
+# File handle is : 57
+# File handle is : 58
+# File handle is : 59
+# File handle is : 60
+# File handle is : 61
+# File handle is : 62
+# File handle is : 63
+# File handle is : 64
+# File handle is : 65
+# File handle is : 66
+# File handle is : 67
+# File handle is : 68
+# File handle is : 69
+# File handle is : 70
+# File handle is : 71
+# File handle is : 72
+# File handle is : 73
+# File handle is : 74
+# File handle is : 75
+# File handle is : 76
+# File handle is : 77
+# File handle is : 78
+# File handle is : 79
+# File handle is : 80
+# File handle is : 81
+# File handle is : 82
+# File handle is : 83
+# File handle is : 84
+# File handle is : 85
+# File handle is : 86
+# File handle is : 87
+# File handle is : 88
+# File handle is : 89
+# File handle is : 90
+# File handle is : 91
+# File handle is : 92
+# File handle is : 93
+# File handle is : 94
+# File handle is : 95
+# File handle is : 96
+# File handle is : 97
+# File handle is : 98
+# File handle is : 99
+# File handle is : 100
+# File handle is : 101
+# File handle is : 102
+# File handle is : 103
+# File handle is : 104
+# File handle is : 105
+# File handle is : 106
+# File handle is : 107
+# File handle is : 108
+# File handle is : 109
+# File handle is : 110
+# File handle is : 111
+# File handle is : 112
+# File handle is : 113
+# File handle is : 114
+# File handle is : 115
+# File handle is : 116
+# File handle is : 117
+# File handle is : 118
+# File handle is : 119
+# File handle is : 120
+# File handle is : 121
+# File handle is : 122
+# File handle is : 123
+# File handle is : 124
+# File handle is : 125
+# File handle is : 126
+# File handle is : 127
+# File handle is : 128
+# File handle is : 129
+# File handle is : 130
+# File handle is : 131
+# File handle is : 132
+# File handle is : 133
+# File handle is : 134
+# File handle is : 135
+# File handle is : 136
+# File handle is : 137
+# File handle is : 138
+# File handle is : 139
+# File handle is : 140
+# File handle is : 141
+# File handle is : 142
+# File handle is : 143
+# File handle is : 144
+# File handle is : 145
+# File handle is : 146
+# File handle is : 147
+# File handle is : 148
+# File handle is : 149
+# File handle is : 150
+# File handle is : 151
+# File handle is : 152
+# File handle is : 153
+# File handle is : 154
+# File handle is : 155
+# File handle is : 156
+# File handle is : 157
+# File handle is : 158
+# File handle is : 159
+# File handle is : 160
+# File handle is : 161
+# File handle is : 162
+# File handle is : 163
+# File handle is : 164
+# File handle is : 165
+# File handle is : 166
+# File handle is : 167
+# File handle is : 168
+# File handle is : 169
+# File handle is : 170
+# File handle is : 171
+# File handle is : 172
+# File handle is : 173
+# File handle is : 174
+# File handle is : 175
+# File handle is : 176
+# File handle is : 177
+# File handle is : 178
+# File handle is : 179
+# File handle is : 180
+# File handle is : 181
+# File handle is : 182
+# File handle is : 183
+# File handle is : 184
+# File handle is : 185
+# File handle is : 186
+# File handle is : 187
+# File handle is : 188
+# File handle is : 189
+# File handle is : 190
+# File handle is : 191
+# File handle is : 192
+# File handle is : 193
+# File handle is : 194
+# File handle is : 195
+# File handle is : 196
+# File handle is : 197
+# File handle is : 198
+# File handle is : 199
+# File handle is : 200
+# File handle is : 201
+# File handle is : 202
+# File handle is : 203
+# File handle is : 204
+# File handle is : 205
+# File handle is : 206
+# File handle is : 207
+# File handle is : 208
+# File handle is : 209
+# File handle is : 210
+# File handle is : 211
+# File handle is : 212
+# File handle is : 213
+# File handle is : 214
+# File handle is : 215
+# File handle is : 216
+# File handle is : 217
+# File handle is : 218
+# File handle is : 219
+# File handle is : 220
+# File handle is : 221
+# File handle is : 222
+# File handle is : 223
+# File handle is : 224
+# File handle is : 225
+# File handle is : 226
+# File handle is : 227
+# File handle is : 228
+# File handle is : 229
+# File handle is : 230
+# File handle is : 231
+# File handle is : 232
+# File handle is : 233
+# File handle is : 234
+# File handle is : 235
+# File handle is : 236
+# File handle is : 237
+# File handle is : 238
+# File handle is : 239
+# File handle is : 240
+# File handle is : 241
+# File handle is : 242
+# File handle is : 243
+# File handle is : 244
+# File handle is : 245
+# File handle is : 246
+# File handle is : 247
+# File handle is : 248
+# File handle is : 249
+# File handle is : 250
+# File handle is : 251
+# File handle is : 252
+# File handle is : 253
+# File handle is : 254
+# File handle is : 255
+# Not enough file descriptor!
+Error while opening file
+# Goodbye
+ShellShock Version 0.000003
+
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# # File handle is : 0
+# OK
+# OK
+# File handle is : 1
+# # # Name                             Type Inode Size
+.                                D    3     320
+..                               D    0     320
+f3                               F    4     0
+f4                               F    4     0
+f5                               F    5     10
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# File handle is : 0
+# Goodbye
+============================
+ Running Tests... 
+============================
+
+***** Mkfs Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # fake doesn't exist,and try to open as read-only
+Error while opening file
+# Error while opening file
+# Error while opening file
+# Error while opening file
+# Error while opening file
+# # File handle is : 0
+# File handle is : 1
+# File handle is : 2
+# Name                             Type Inode Size
+.                                D    0     256
+..                               D    0     256
+a                                F    1     0
+b                                F    2     0
+# OK
+# File handle is : 0
+# File handle is : 3
+# . is a directory,but try to open as writable
+Error while opening file
+# . is a directory,but try to open as writable
+Error while opening file
+# Goodbye
+***** Open Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # fd 0 is not using!Problem with closing file
+# Wrong fd input!
+Problem with closing file
+# fd 49 is not using!Problem with closing file
+# Wrong fd input!
+Problem with closing file
+# File handle is : 0
+# OK
+# Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+a                                F    1     0
+# File handle is : 0
+# OK
+# File handle is : 0
+# File handle is : 1
+# OK
+# OK
+# Goodbye
+***** Close Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# fd 0 is not using!Read failed
+# fd 0 is not using!Read failed
+# # File handle is : 0
+# OK
+# fd 0 is not using!Read failed
+# File handle is : 0
+# Data read in :   .       
+# OK
+# File handle is : 0
+# Data read in : A
+# OK
+# File handle is : 0
+# can't read the file open as write-only fileRead failed
+# OK
+# File handle is : 0
+# Data read in : A
+# OK
+# # File handle is : 0
+# File handle is : 1
+# Data read in : AB
+# Data read in : AB
+# Data read in : CDEF
+# Data read in : CDE
+# OK
+# OK
+# File handle is : 0
+# Wrong count input!
+Read failed
+# Wrong count input!
+Read failed
+# Data read in : ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`
+# Data read in : 
+# Data read in : 
+# OK
+# Data read in : HI
+# OK
+# Data read in : _
+# OK
+# Data read in : M
+# OK
+# Data read in : A
+# OK
+# Data read in : R
+# OK
+# Data read in : C
+# Goodbye
+***** Read Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # fd 0 is not using!Error while writing file
+# # File handle is : 0
+# OK
+# fd 0 is not using!Error while writing file
+# File handle is : 0
+# can't write the file open as read-only fileError while writing file
+# OK
+# File handle is : 0
+# Done
+# OK
+# File handle is : 0
+# Done
+# OK
+# File handle is : 0
+# File handle is : 1
+# Done
+# Done
+# Done
+# Done
+# hi,nmhbu
+# sup,same
+# OK
+# OK
+# # File handle is : 0
+# OK
+# Done
+# OK
+# Done
+#  * do_you_wanna_have_a_bad_time?
+# OK
+# Done
+# OK
+# Done
+#  * do_ydirtynna_have_a_bad_timebit
+# Goodbye
+***** Write Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # Already have a same name file !
+Problem with making directory
+# Already have a same name file !
+Problem with making directory
+# OK
+# Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+d                                D    1     128
+# Already have a same name file !
+Problem with making directory
+# OK
+# OK
+# OK
+# Name                             Type Inode Size
+.                                D    0     384
+..                               D    0     384
+d                                D    1     128
+ty_bit                           D    2     128
+ected_edge                       D    3     128
+ridkm                            D    4     128
+# Goodbye
+***** Mkdir Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # The directory doesn't exist!
+Problem with removing directory
+# Problem with removing directory
+# Problem with removing directory
+# OK
+# Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+d                                D    1     128
+# OK
+# Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# OK
+# OK
+# # OK
+# Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+d                                D    2     192
+# OK
+# Goodbye
+***** Rmdir Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# Problem with changing directory
+# OK
+# Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# OK
+# Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# OK
+# OK
+# Name                             Type Inode Size
+.                                D    1     128
+..                               D    0     192
+# OK
+# Name                             Type Inode Size
+.                                D    1     128
+..                               D    0     192
+# OK
+# Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+a                                D    1     128
+# Goodbye
+***** Cd Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # The old file doesn't exist!
+Problem with link
+# Try to link a directory!
+Problem with link
+# # Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+f                                F    1     0
+# new filename already exist!
+Problem with link
+# # Name                             Type Inode Size
+.                                D    0     256
+..                               D    0     256
+f                                F    1     0
+g                                F    2     0
+# new filename already exist!
+Problem with link
+# # # # # Name                             Type Inode Size
+.                                D    0     512
+..                               D    0     512
+f                                F    1     0
+g                                F    2     0
+f1                               F    1     0
+f2                               F    1     0
+g0                               F    2     0
+gz                               F    2     0
+# Goodbye
+***** Link Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # The file doesn't exist!
+Problem with unlink
+# try to unlink a dir!
+Problem with unlink
+# # Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+a                                F    1     0
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# # # Name                             Type Inode Size
+.                                D    0     256
+..                               D    0     256
+a                                F    2     0
+b                                F    2     0
+# # Name                             Type Inode Size
+.                                D    0     192
+..                               D    0     192
+b                                F    2     0
+# # Name                             Type Inode Size
+.                                D    0     128
+..                               D    0     128
+# # File handle is : 0
+# # Data read in : ABCDE
+# OK
+# Goodbye
+***** Unlink Tests *****
+None
+***********************
+ShellShock Version 0.000003
+
+# # The file doesn't exist!
+Stat failed
+#     Inode No         : 0
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 128
+    Blocks allocated : 1
+#     Inode No         : 0
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 128
+    Blocks allocated : 1
+# #     Inode No         : 1
+    Type             : FILE
+    Link Count       : 1
+    Size             : 10
+    Blocks allocated : 1
+# #     Inode No         : 1
+    Type             : FILE
+    Link Count       : 2
+    Size             : 10
+    Blocks allocated : 1
+#     Inode No         : 1
+    Type             : FILE
+    Link Count       : 2
+    Size             : 10
+    Blocks allocated : 1
+# #     Inode No         : 1
+    Type             : FILE
+    Link Count       : 1
+    Size             : 10
+    Blocks allocated : 1
+# OK
+#     Inode No         : 2
+    Type             : DIRECTORY
+    Link Count       : 1
+    Size             : 128
+    Blocks allocated : 1
+# #     Inode No         : 3
+    Type             : FILE
+    Link Count       : 1
+    Size             : 1049
+    Blocks allocated : 1
+# Goodbye
+***** Stat Tests *****
+None
+***********************
