@@ -374,7 +374,7 @@ static int dir_entry_find(int dir_index,char *filename)
 
 	if(total_block_num>DIRECT_BLOCK)
 	{
-		int i,j,entry_block;
+		int i,j;
 
 		dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
 		uint16_t *block_list=(uint16_t *)block_scratch;
@@ -742,7 +742,10 @@ int fs_mkfs( void) {
 	my_bzero_block(my_sb->dblock_bitmap_place);
 	bzero(inode_bitmap_block_scratch,NEW_BLOCK_SIZE);
 	bzero(dblock_bitmap_block_scratch,NEW_BLOCK_SIZE);
-
+	//reset pointers
+	inode_bitmap_last=0;
+	dblock_bitmap_last=0;
+	
 	inode temp_root;
 	inode_init(&temp_root,MY_DIRECTORY);
 	inode_write(ROOT_DIR_ID,&temp_root);
@@ -1025,7 +1028,7 @@ int fs_lseek( int fd, int offset) {
 	return old_cursor;
 }
 
-int fs_mkdir( char *fileName) {
+int fs_mkdir_pwd( char *fileName) {
 	if(strlen(fileName)>MAX_FILE_NAME)
 	{
 		ERROR_MSG(("Too long file name!\n"))
@@ -1054,7 +1057,45 @@ int fs_mkdir( char *fileName) {
 	}
 	return new_inode;
 }
-
+int fs_mkdir(char *fileName)
+{
+	
+	int path_len=strlen(fileName);
+	
+	int path_res=path_resolve(fileName,pwd,2);//try to find parent dir
+	if(path_res<0)//create parent dir
+	{
+		char path_buffer[MAX_PATH_NAME];
+		bzero(path_buffer,MAX_PATH_NAME);
+		
+		bcopy((unsigned char *)fileName,(unsigned char *)path_buffer,path_len);
+		int i;
+		for(i=path_len-1;i>=0;i--)
+			if(path_buffer[i]=='/')
+			{
+				path_buffer[i]=0;
+				break;
+			}
+		fs_mkdir(path_buffer);
+	}
+	path_res=path_resolve(fileName,pwd,2);//get parent dir
+	
+	if(path_res>=0)//we need to make sure parent dir is successfully created
+	{
+		int temp_pwd=pwd;
+		
+		int i;
+		for(i=path_len-1;i>=0;i--)//cut the last term
+			if(fileName[i]=='/')
+				break;
+		i++;
+		
+		pwd=path_res;
+		fs_mkdir_pwd(fileName+i);
+		pwd=temp_pwd;
+	}
+	return 0;
+}
 //we assume -r is set
 int fs_rmdir_part( char *fileName) {
 	int dir_res=path_resolve(fileName,pwd,MY_DIRECTORY);
@@ -1085,7 +1126,7 @@ int fs_rmdir_part( char *fileName) {
 
 	if(total_block_num>DIRECT_BLOCK)
 	{
-		int i,j,entry_block;
+		int i,j;
 		dblock_read(dir_inode.blocks[DIRECT_BLOCK],block_scratch);
 		uint16_t *block_list=(uint16_t *)block_scratch;
 
@@ -1185,7 +1226,10 @@ int fs_rmdir(char *fileName)
 				break;
 		i++;
 		dir_entry_delete(parent_res,fileName+i);
+		return 0;
 	}
+	else
+		return -1;
 }
 
 int fs_cd( char *dirName) {
